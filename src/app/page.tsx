@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ClarifyCard } from "@/components/ClarifyCard";
 import { InputPanel } from "@/components/InputPanel";
 import { PlanView } from "@/components/PlanView";
+import { PlanSkeleton, ProgressStepper } from "@/components/ProgressStepper";
 import { TracePanel } from "@/components/TracePanel";
 import { useAgentStream, type PlanBody } from "@/components/useAgentStream";
 
@@ -66,6 +67,12 @@ export default function Home() {
                 window.scrollTo({ top: 0, behavior: "smooth" });
               }}
             />
+          )}
+          {state.running && !state.plan && (
+            <>
+              <ProgressStepper state={state} />
+              <PlanSkeleton />
+            </>
           )}
           <TracePanel state={state} />
           {!state.running && !state.plan && !state.clarify && state.steps.length === 0 && !state.error && (

@@ -1,7 +1,16 @@
 "use client";
 
+import dynamic from "next/dynamic";
+import { useMemo } from "react";
 import { mapsUrl } from "@/lib/geo";
 import type { Place, RenderedPlan } from "@/lib/types";
+import type { MapPoint } from "./RouteMap";
+
+// Leaflet needs `window`, so the map is client-only and code-split.
+const RouteMap = dynamic(() => import("./RouteMap"), {
+  ssr: false,
+  loading: () => <div className="h-64 w-full animate-pulse bg-stone-100 sm:h-72" />,
+});
 
 const SOURCE: Record<Place["source"], { label: string; cls: string; title: string }> = {
   osm_live: { label: "Live · OpenStreetMap", cls: "bg-emerald-50 text-emerald-700 border-emerald-200", title: "Fetched live from OpenStreetMap; price and crowd are estimates" },
@@ -25,6 +34,17 @@ export function PlanView({ plan, onRestart }: { plan: RenderedPlan; onRestart: (
   const c = v.cost;
   const pct = Math.min(100, Math.round((c.total / Math.max(c.budget, 1)) * 100));
   const tl = new Map(v.timeline.map((t) => [t.place_id, t]));
+  const points = useMemo<MapPoint[]>(
+    () => [
+      { lat: p.lat, lon: p.lon, label: "S", name: p.area ? `Start: ${p.area}` : `Start: ${p.city} centre`, kind: "start" },
+      ...plan.stops
+        .flatMap((s, i): MapPoint[] => {
+          const place = plan.places[s.place_id];
+          return place ? [{ lat: place.lat, lon: place.lon, label: String(i + 1), name: place.name, kind: place.kind, time: s.start_time }] : [];
+        }),
+    ],
+    [plan, p],
+  );
 
   return (
     <section className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
@@ -73,6 +93,14 @@ export function PlanView({ plan, onRestart }: { plan: RenderedPlan; onRestart: (
         </p>
       </div>
 
+      {/* Route map */}
+      <div className="border-b border-stone-100">
+        <RouteMap points={points} />
+        <p className="px-5 py-1.5 text-[10px] text-stone-400">
+          <span className="font-semibold text-stone-500">S</span> = start · pins match the timeline · straight lines, not driving routes
+        </p>
+      </div>
+
       {/* Timeline */}
       <ol className="px-5 py-4">
         {plan.stops.map((s, i) => {
@@ -81,14 +109,20 @@ export function PlanView({ plan, onRestart }: { plan: RenderedPlan; onRestart: (
           if (!place) return null;
           const src = SOURCE[place.source];
           return (
-            <li key={s.place_id} className="relative pb-5 pl-16 last:pb-0">
+            <li key={s.place_id} className="relative pb-5 pl-20 last:pb-0">
               <div className="absolute left-0 top-0 w-12 text-right">
                 <p className="text-sm font-bold text-stone-900">{s.start_time}</p>
                 <p className="text-[10px] text-stone-400">{s.duration_min} min</p>
               </div>
-              <span className="absolute left-[3.55rem] top-1.5 h-2.5 w-2.5 rounded-full bg-orange-500 ring-4 ring-orange-100" />
-              {i < plan.stops.length - 1 && <span className="absolute bottom-0 left-[3.85rem] top-5 w-px bg-stone-200" />}
-              <div className="ml-3">
+              <span
+                className={`absolute left-[3.6rem] top-0 flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-semibold text-white ring-4 ${
+                  place.kind === "food" ? "bg-rose-500 ring-rose-100" : "bg-orange-500 ring-orange-100"
+                }`}
+              >
+                {i + 1}
+              </span>
+              {i < plan.stops.length - 1 && <span className="absolute bottom-0 left-[4.35rem] top-7 w-px bg-stone-200" />}
+              <div className="ml-1">
                 {t && t.travel_from_prev_min > 0 && (
                   <p className="mb-1 text-[11px] text-stone-400">
                     {t.travel_mode === "walk" ? "🚶" : "🛺"} {t.travel_from_prev_min} min {i === 0 ? "from start" : ""} · {t.travel_km} km

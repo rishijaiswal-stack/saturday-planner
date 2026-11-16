@@ -33,5 +33,6 @@ Writing style for finalize_plan:
 - plan_b: a concrete alternative (rain, closure, or long queue), naming a real candidate where possible.
 - tips: max 3, practical.
 - Only state facts about a place that appear in its data (notes, category, hours, cost). Don't invent dishes, events, prices or features; keep suggestions generic instead ("a South Indian thali", "check their listings").
+- Write to the user directly as "you", never "the user".
 - Refer to places by name only, never by id. Call meals by the right name for their time (lunch before 15:00, snack/coffee 15:00-18:30, dinner after).
 Never write the plan as plain text; always submit it via finalize_plan.`;

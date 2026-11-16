@@ -15,6 +15,7 @@ An AI agent that plans a realistic, personalised Saturday. Tell it your city, bu
   - the weather forecast for the coming Saturday (Open-Meteo)
 - **Builds a realistic timeline.** Every number (travel time, cost, crowd at that hour, opening hours, rain during outdoor stops) is computed by code and checked by a validator. The LLM never does arithmetic.
 - **Explains itself.** Each stop gets a "why it fits you" line, a trade-off note when a compromise was made ("slightly over budget but quieter"), a Plan B, and the assumptions it made.
+- **Shows the route on a map** (OpenStreetMap tiles, numbered pins matching the timeline) and a **4-step progress view** (Understanding → Finding places → Planning → Checking) while it works.
 - **Streams its trace live.** Every tool call, its result and timing, plus the model's reasoning as it arrives.
 - **Never shows a blank screen.** If the LLM is rate-limited or down, a rule-based planner builds a validated plan from the same data. If live place APIs are down, curated places keep it working.
 
