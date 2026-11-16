@@ -49,7 +49,7 @@ export async function parsePreferences(raw: RawPrefs): Promise<ParseOutcome> {
   }
 
   // Geocode: live (Photon) first, known-city table as fallback.
-  let lat: number, lon: number, cc: string, cityName = cityIn;
+  let lat: number, lon: number, cc: string, cityName = cityIn.replace(/\b\p{L}/gu, (ch) => ch.toUpperCase());
   const known = CITY_CENTRES[cityIn.toLowerCase()];
   if (known) {
     // Known city: no network round trip needed.

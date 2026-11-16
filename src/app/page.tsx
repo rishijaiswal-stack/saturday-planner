@@ -56,7 +56,8 @@ export default function Home() {
       </header>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
-        <div className="space-y-4">
+        {/* Sticky on desktop so the form stays visible while a long plan scrolls. */}
+        <div className="space-y-4 lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)] lg:self-start lg:overflow-y-auto lg:pb-2">
           <InputPanel onSubmit={submit} running={state.running} />
           <p className="px-1 text-[11px] leading-relaxed text-slate-400">
             Data: OpenStreetMap via Geoapify and Photon, plus a small curated list. Weather: Open-Meteo. Language models: open models on Groq. Prices for
