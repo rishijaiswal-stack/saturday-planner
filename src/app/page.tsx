@@ -28,27 +28,26 @@ export default function Home() {
     <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:py-12">
       <header className="mb-10">
         <div className="flex items-center gap-2.5">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-600/25">
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-neutral-950 text-white shadow-sm">
             <Compass className="h-5 w-5" aria-hidden />
           </span>
-          <span className="text-sm font-semibold tracking-tight text-slate-900">Saturday Planner</span>
-          <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-indigo-700 ring-1 ring-inset ring-indigo-200">
-            AI agent
-          </span>
+          <span className="text-sm font-semibold tracking-tight text-neutral-900">Saturday Planner</span>
+
         </div>
-        <h1 className="mt-6 max-w-3xl text-3xl font-bold tracking-tight text-slate-900 sm:text-[2.6rem] sm:leading-[1.1]">
+        <p className="mt-10 text-xs font-semibold uppercase tracking-[0.18em] text-neutral-700">AI agent · Real places · Live weather</p>
+        <h1 className="mt-4 max-w-3xl text-4xl font-semibold tracking-tight text-neutral-950 sm:text-[3.4rem] sm:leading-[1.08]">
           A Saturday plan that fits{" "}
-          <span className="bg-gradient-to-r from-indigo-600 via-violet-600 to-indigo-500 bg-clip-text text-transparent">your mood, time and budget.</span>
+          <span className="text-neutral-400">your mood, time and budget.</span>
         </h1>
-        <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-slate-600">
+        <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-neutral-600">
           Tell the planner where you are and how you feel. It finds real places nearby, checks the forecast, travel time and opening hours, and explains
           every choice it makes.
         </p>
         <ul className="mt-5 flex flex-wrap gap-x-6 gap-y-2">
           {FEATURES.map(({ Icon, title, text }) => (
-            <li key={title} className="flex items-center gap-2 text-xs text-slate-500">
-              <Icon className="h-4 w-4 text-indigo-600" aria-hidden />
-              <span className="font-semibold text-slate-700">{title}</span>
+            <li key={title} className="flex items-center gap-2 text-xs text-neutral-500">
+              <Icon className="h-4 w-4 text-neutral-900" aria-hidden />
+              <span className="font-semibold text-neutral-700">{title}</span>
               <span className="hidden sm:inline">· {text}</span>
             </li>
           ))}
@@ -59,7 +58,7 @@ export default function Home() {
         {/* Sticky on desktop so the form stays visible while a long plan scrolls. */}
         <div className="space-y-4 lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)] lg:self-start lg:overflow-y-auto lg:pb-2">
           <InputPanel onSubmit={submit} running={state.running} />
-          <p className="px-1 text-[11px] leading-relaxed text-slate-400">
+          <p className="px-1 text-[11px] leading-relaxed text-neutral-400">
             Data: OpenStreetMap via Geoapify and Photon, plus a small curated list. Weather: Open-Meteo. Language models: open models on Groq. Prices for
             live places and crowd levels are estimates and are labelled as such.
           </p>
@@ -108,12 +107,12 @@ export default function Home() {
           )}
           <TracePanel state={state} />
           {!state.running && !state.plan && !state.clarify && state.steps.length === 0 && !state.error && (
-            <div className="flex min-h-72 flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white/70 p-8 text-center">
-              <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 ring-1 ring-inset ring-indigo-100">
+            <div className="flex min-h-72 flex-col items-center justify-center rounded-2xl border border-dashed border-neutral-300 bg-white/70 p-8 text-center">
+              <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-cream text-neutral-900 ring-1 ring-inset ring-neutral-200">
                 <Route className="h-6 w-6" aria-hidden />
               </span>
-              <p className="mt-3 text-sm font-semibold text-slate-800">Your plan will appear here</p>
-              <p className="mt-1 max-w-sm text-xs leading-relaxed text-slate-500">
+              <p className="mt-3 text-sm font-semibold text-neutral-800">Your plan will appear here</p>
+              <p className="mt-1 max-w-sm text-xs leading-relaxed text-neutral-500">
                 The form is pre-filled with the example from the brief. Select &ldquo;Create my plan&rdquo;, or switch to &ldquo;Describe it&rdquo; and try the
                 vague request to see the agent ask clarifying questions.
               </p>

@@ -54,13 +54,13 @@ export function ProgressStepper({ state }: { state: StreamState }) {
   const detail = latestDetail(state, phase);
 
   return (
-    <section className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm shadow-slate-900/5" aria-live="polite">
+    <section className="rounded-2xl border border-neutral-200/80 bg-white p-5 shadow-sm shadow-neutral-900/5" aria-live="polite">
       <div className="mb-5 flex items-center justify-between">
-        <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-900">
-          <LoaderCircle className="h-4 w-4 animate-spin text-indigo-600" aria-hidden />
+        <h2 className="flex items-center gap-2 text-sm font-semibold text-neutral-900">
+          <LoaderCircle className="h-4 w-4 animate-spin text-amber-500" aria-hidden />
           Building your plan
         </h2>
-        <span className="text-xs tabular-nums text-slate-400">{elapsed}s</span>
+        <span className="text-xs tabular-nums text-neutral-400">{elapsed}s</span>
       </div>
       <ol className="grid grid-cols-4 gap-2">
         {PHASES.map((p, i) => {
@@ -72,33 +72,33 @@ export function ProgressStepper({ state }: { state: StreamState }) {
                 <span
                   className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition ${
                     done
-                      ? "bg-emerald-500 text-white"
+                      ? "bg-neutral-950 text-white"
                       : active
-                        ? "bg-indigo-600 text-white ring-4 ring-indigo-100"
-                        : "bg-slate-100 text-slate-400"
+                        ? "bg-amber-400 text-neutral-950 ring-4 ring-amber-100"
+                        : "bg-neutral-100 text-neutral-400"
                   }`}
                 >
                   {done ? <Check className="h-4 w-4" aria-hidden /> : <p.Icon className="h-4 w-4" aria-hidden />}
                 </span>
                 {i < PHASES.length - 1 && (
-                  <span className="mx-1.5 h-0.5 flex-1 overflow-hidden rounded bg-slate-200">
-                    <span className={`block h-full bg-emerald-400 transition-all duration-500 ${done ? "w-full" : "w-0"}`} />
+                  <span className="mx-1.5 h-0.5 flex-1 overflow-hidden rounded bg-neutral-200">
+                    <span className={`block h-full bg-neutral-950 transition-all duration-500 ${done ? "w-full" : "w-0"}`} />
                   </span>
                 )}
               </div>
-              <p className={`mt-2 text-xs font-semibold ${active ? "text-slate-900" : done ? "text-slate-600" : "text-slate-400"}`}>{p.title}</p>
-              <p className="mt-0.5 hidden text-[11px] leading-snug text-slate-400 sm:block">{p.hint}</p>
+              <p className={`mt-2 text-xs font-semibold ${active ? "text-neutral-900" : done ? "text-neutral-600" : "text-neutral-400"}`}>{p.title}</p>
+              <p className="mt-0.5 hidden text-[11px] leading-snug text-neutral-400 sm:block">{p.hint}</p>
             </li>
           );
         })}
       </ol>
-      <div className="mt-5 min-h-5 rounded-lg bg-slate-50 px-3 py-2 text-xs">
+      <div className="mt-5 min-h-5 rounded-lg bg-neutral-50 px-3 py-2 text-xs">
         {waiting ? (
           <p className="text-amber-700">The free AI tier is busy, so the agent is waiting or switching models. You will still get a checked plan.</p>
         ) : detail ? (
-          <p className="text-slate-600">{detail}</p>
+          <p className="text-neutral-600">{detail}</p>
         ) : (
-          <p className="text-slate-400">{PHASES[phase].hint}</p>
+          <p className="text-neutral-400">{PHASES[phase].hint}</p>
         )}
       </div>
     </section>
@@ -107,17 +107,17 @@ export function ProgressStepper({ state }: { state: StreamState }) {
 
 export function PlanSkeleton() {
   return (
-    <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm" aria-hidden>
-      <div className="h-32 animate-pulse bg-gradient-to-br from-indigo-200 via-violet-200 to-indigo-100" />
-      <div className="h-56 animate-pulse bg-slate-100" />
+    <div className="overflow-hidden rounded-2xl border border-neutral-200/80 bg-white shadow-sm" aria-hidden>
+      <div className="h-32 animate-pulse bg-cream" />
+      <div className="h-56 animate-pulse bg-neutral-100" />
       <div className="space-y-5 p-5">
         {[0, 1, 2].map((i) => (
           <div key={i} className="flex gap-4">
-            <div className="h-4 w-10 animate-pulse rounded bg-slate-200" />
+            <div className="h-4 w-10 animate-pulse rounded bg-neutral-200" />
             <div className="flex-1 space-y-2">
-              <div className="h-4 w-1/2 animate-pulse rounded bg-slate-200" />
-              <div className="h-3 w-5/6 animate-pulse rounded bg-slate-100" />
-              <div className="h-3 w-2/3 animate-pulse rounded bg-slate-100" />
+              <div className="h-4 w-1/2 animate-pulse rounded bg-neutral-200" />
+              <div className="h-3 w-5/6 animate-pulse rounded bg-neutral-100" />
+              <div className="h-3 w-2/3 animate-pulse rounded bg-neutral-100" />
             </div>
           </div>
         ))}

@@ -1,15 +1,18 @@
 @import "tailwindcss";
 
 @theme inline {
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-raleway);
   --font-mono: var(--font-geist-mono);
 }
 
+@theme {
+  --color-cream: #f4f3ec;
+  --color-cream-dark: #e8e6da;
+}
+
 body {
-  background-color: #f8fafc;
-  background-image:
-    radial-gradient(1200px 520px at 8% -8%, rgba(99, 102, 241, 0.09), transparent 60%),
-    radial-gradient(900px 420px at 100% 0%, rgba(245, 158, 11, 0.06), transparent 60%);
+  background-color: #fbfaf7;
+  background-image: radial-gradient(1100px 480px at 85% -10%, rgba(251, 191, 36, 0.08), transparent 60%);
   background-repeat: no-repeat;
-  color: #0f172a;
+  color: #0a0a0a;
 }

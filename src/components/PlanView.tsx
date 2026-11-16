@@ -32,13 +32,13 @@ import type { MapPoint } from "./RouteMap";
 // Leaflet needs `window`, so the map is client-only and code-split.
 const RouteMap = dynamic(() => import("./RouteMap"), {
   ssr: false,
-  loading: () => <div className="h-64 w-full animate-pulse bg-slate-100 sm:h-72" />,
+  loading: () => <div className="h-64 w-full animate-pulse bg-neutral-100 sm:h-72" />,
 });
 
 const SOURCE: Record<Place["source"], { label: string; cls: string; title: string }> = {
   osm_live: { label: "Live · OpenStreetMap", cls: "bg-emerald-50 text-emerald-700 ring-emerald-200", title: "Fetched live from OpenStreetMap; price and crowd level are estimates" },
-  curated: { label: "Curated", cls: "bg-indigo-50 text-indigo-700 ring-indigo-200", title: "Hand-checked place with a known price range and hours" },
-  generic: { label: "Generic suggestion", cls: "bg-slate-100 text-slate-600 ring-slate-200", title: "No specific venue matched; a generic suggestion" },
+  curated: { label: "Curated", cls: "bg-cream text-neutral-900 ring-neutral-200", title: "Hand-checked place with a known price range and hours" },
+  generic: { label: "Generic suggestion", cls: "bg-neutral-100 text-neutral-600 ring-neutral-200", title: "No specific venue matched; a generic suggestion" },
 };
 const CROWD: Record<string, { label: string; dot: string }> = {
   low: { label: "Quiet", dot: "bg-emerald-500" },
@@ -47,7 +47,7 @@ const CROWD: Record<string, { label: string; dot: string }> = {
 };
 const VEG: Record<string, string> = { pure_veg: "Pure vegetarian", veg_friendly: "Vegetarian options", unknown: "Veg options unverified", non_veg: "Non-vegetarian" };
 
-function Badge({ children, cls = "bg-slate-50 text-slate-600 ring-slate-200", title }: { children: React.ReactNode; cls?: string; title?: string }) {
+function Badge({ children, cls = "bg-neutral-50 text-neutral-600 ring-neutral-200", title }: { children: React.ReactNode; cls?: string; title?: string }) {
   return (
     <span title={title} className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-medium ring-1 ring-inset ${cls}`}>
       {children}
@@ -57,7 +57,7 @@ function Badge({ children, cls = "bg-slate-50 text-slate-600 ring-slate-200", ti
 
 function SectionTitle({ Icon, children }: { Icon: React.ComponentType<{ className?: string }>; children: React.ReactNode }) {
   return (
-    <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
+    <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-neutral-500">
       <Icon className="h-3.5 w-3.5" aria-hidden />
       {children}
     </p>
@@ -83,7 +83,7 @@ export function PlanView({ plan, onRestart }: { plan: RenderedPlan; onRestart: (
   const date = new Date(p.date + "T00:00:00").toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "short" });
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-lg shadow-slate-900/5">
+    <section className="overflow-hidden rounded-2xl border border-neutral-200/80 bg-white shadow-lg shadow-neutral-900/5">
       {plan.generated_by === "rules_fallback" && (
         <div className="flex items-start gap-2 border-b border-amber-200 bg-amber-50 px-5 py-2.5 text-xs text-amber-900">
           <LifeBuoy className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
@@ -92,16 +92,16 @@ export function PlanView({ plan, onRestart }: { plan: RenderedPlan; onRestart: (
       )}
 
       {/* Header */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-indigo-950 via-indigo-900 to-violet-800 px-6 py-6 text-white">
-        <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-violet-500/30 blur-3xl" aria-hidden />
+      <div className="relative overflow-hidden bg-neutral-950 px-6 py-6 text-white">
+        <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-amber-400/15 blur-3xl" aria-hidden />
         <div className="pointer-events-none absolute -bottom-20 left-10 h-48 w-48 rounded-full bg-amber-400/20 blur-3xl" aria-hidden />
         <p className="relative flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-amber-300">
           <CalendarDays className="h-3.5 w-3.5" aria-hidden />
           {date} · {p.city}
           {p.area ? ` · ${p.area}` : ""}
         </p>
-        <h2 className="relative mt-2 text-2xl font-bold leading-tight tracking-tight sm:text-[1.7rem]">{plan.title}</h2>
-        <p className="relative mt-2 max-w-2xl text-sm leading-relaxed text-indigo-100">{plan.summary}</p>
+        <h2 className="relative mt-2 text-2xl font-semibold leading-tight tracking-tight sm:text-[1.8rem]">{plan.title}</h2>
+        <p className="relative mt-2 max-w-2xl text-sm leading-relaxed text-neutral-300">{plan.summary}</p>
         <div className="relative mt-4 flex flex-wrap gap-2 text-xs">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 ring-1 ring-white/15">
             <Clock className="h-3.5 w-3.5 text-amber-300" aria-hidden />
@@ -125,13 +125,13 @@ export function PlanView({ plan, onRestart }: { plan: RenderedPlan; onRestart: (
       </div>
 
       {/* Budget */}
-      <div className="border-b border-slate-100 px-6 py-4">
+      <div className="border-b border-neutral-100 px-6 py-4">
         <div className="flex items-baseline justify-between gap-2 text-sm">
-          <span className="flex flex-wrap items-center gap-1.5 font-semibold text-slate-900">
-            <Wallet className="h-4 w-4 text-indigo-600" aria-hidden />
+          <span className="flex flex-wrap items-center gap-1.5 font-semibold text-neutral-900">
+            <Wallet className="h-4 w-4 text-neutral-900" aria-hidden />
             Estimated total {c.currency}
             {c.total.toLocaleString()}
-            <span className="font-normal text-slate-400">
+            <span className="font-normal text-neutral-400">
               of {c.currency}
               {c.budget.toLocaleString()}
             </span>
@@ -140,20 +140,20 @@ export function PlanView({ plan, onRestart }: { plan: RenderedPlan; onRestart: (
             {c.remaining >= 0 ? `${c.currency}${c.remaining.toLocaleString()} left` : `${c.currency}${(-c.remaining).toLocaleString()} over`}
           </span>
         </div>
-        <div className="mt-2.5 h-2 overflow-hidden rounded-full bg-slate-100">
+        <div className="mt-2.5 h-2 overflow-hidden rounded-full bg-neutral-100">
           <div
-            className={`h-full rounded-full ${pct > 100 ? "bg-rose-500" : pct > 90 ? "bg-amber-500" : "bg-gradient-to-r from-indigo-500 to-violet-500"}`}
+            className={`h-full rounded-full ${pct > 100 ? "bg-rose-500" : pct > 90 ? "bg-amber-500" : "bg-neutral-900"}`}
             style={{ width: `${Math.max(pct, 2)}%` }}
           />
         </div>
-        <p className="mt-2 text-[11px] text-slate-500">
+        <p className="mt-2 text-[11px] text-neutral-500">
           Places {c.currency}
           {c.stops_total} · travel {c.currency}
           {c.travel_total} including the ride home · 5% buffer {c.currency}
           {c.buffer}. Prices for live places are category estimates.
         </p>
         {plan.budget_note && (
-          <p className="mt-2 flex items-start gap-1.5 rounded-lg bg-indigo-50 px-3 py-2 text-xs leading-relaxed text-indigo-900">
+          <p className="mt-2 flex items-start gap-1.5 rounded-lg bg-cream px-3 py-2 text-xs leading-relaxed text-neutral-800">
             <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
             {plan.budget_note}
           </p>
@@ -161,9 +161,9 @@ export function PlanView({ plan, onRestart }: { plan: RenderedPlan; onRestart: (
       </div>
 
       {/* Map */}
-      <div className="border-b border-slate-100">
+      <div className="border-b border-neutral-100">
         <RouteMap points={points} />
-        <p className="flex items-center gap-1.5 px-6 py-2 text-[11px] text-slate-400">
+        <p className="flex items-center gap-1.5 px-6 py-2 text-[11px] text-neutral-400">
           <Route className="h-3 w-3 shrink-0" aria-hidden />S marks the start. Pins match the timeline; lines are straight connections, not driving routes.
         </p>
       </div>
@@ -179,20 +179,20 @@ export function PlanView({ plan, onRestart }: { plan: RenderedPlan; onRestart: (
           return (
             <li key={s.place_id} className="relative pb-7 pl-20 last:pb-0">
               <div className="absolute left-0 top-0 w-12 text-right">
-                <p className="text-sm font-bold tabular-nums text-slate-900">{s.start_time}</p>
-                <p className="text-[11px] text-slate-400">{s.duration_min} min</p>
+                <p className="text-sm font-bold tabular-nums text-neutral-900">{s.start_time}</p>
+                <p className="text-[11px] text-neutral-400">{s.duration_min} min</p>
               </div>
               <span
                 className={`absolute left-[3.6rem] top-0 flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-bold text-white ring-4 ${
-                  place.kind === "food" ? "bg-amber-500 ring-amber-100" : "bg-indigo-600 ring-indigo-100"
+                  place.kind === "food" ? "bg-amber-500 ring-amber-100" : "bg-neutral-950 ring-neutral-200"
                 }`}
               >
                 {i + 1}
               </span>
-              {i < plan.stops.length - 1 && <span className="absolute bottom-0 left-[4.35rem] top-7 w-px bg-slate-200" aria-hidden />}
+              {i < plan.stops.length - 1 && <span className="absolute bottom-0 left-[4.35rem] top-7 w-px bg-neutral-200" aria-hidden />}
               <div className="ml-1">
                 {t && t.travel_from_prev_min > 0 && (
-                  <p className="mb-1 flex items-center gap-1 text-[11px] text-slate-400">
+                  <p className="mb-1 flex items-center gap-1 text-[11px] text-neutral-400">
                     {t.travel_mode === "walk" ? <Footprints className="h-3 w-3" aria-hidden /> : <Car className="h-3 w-3" aria-hidden />}
                     {t.travel_from_prev_min} min {t.travel_mode === "walk" ? "walk" : "by auto/cab"}
                     {i === 0 ? " from start" : ""} · {t.travel_km} km
@@ -203,10 +203,10 @@ export function PlanView({ plan, onRestart }: { plan: RenderedPlan; onRestart: (
                   href={mapsUrl(place.lat, place.lon)}
                   target="_blank"
                   rel="noreferrer"
-                  className="group inline-flex items-center gap-1 text-base font-semibold text-slate-900 hover:text-indigo-700"
+                  className="group inline-flex items-center gap-1 text-base font-semibold text-neutral-900 hover:text-neutral-950"
                 >
                   {place.name}
-                  <ArrowUpRight className="h-4 w-4 text-slate-400 transition group-hover:text-indigo-600" aria-hidden />
+                  <ArrowUpRight className="h-4 w-4 text-neutral-400 transition group-hover:text-neutral-900" aria-hidden />
                 </a>
                 <div className="mt-1.5 flex flex-wrap gap-1.5">
                   <Badge cls={src.cls} title={src.title}>
@@ -238,9 +238,9 @@ export function PlanView({ plan, onRestart }: { plan: RenderedPlan; onRestart: (
                     </Badge>
                   )}
                 </div>
-                <p className="mt-2.5 text-sm leading-relaxed text-slate-800">{s.what_to_do}</p>
-                <p className="mt-1.5 text-sm leading-relaxed text-slate-600">
-                  <span className="font-semibold text-slate-800">Why it fits: </span>
+                <p className="mt-2.5 text-sm leading-relaxed text-neutral-800">{s.what_to_do}</p>
+                <p className="mt-1.5 text-sm leading-relaxed text-neutral-600">
+                  <span className="font-semibold text-neutral-800">Why it fits: </span>
                   {s.why_it_fits}
                 </p>
                 {s.tradeoff && (
@@ -259,18 +259,18 @@ export function PlanView({ plan, onRestart }: { plan: RenderedPlan; onRestart: (
       </ol>
 
       {/* Details */}
-      <div className="space-y-4 border-t border-slate-100 px-6 py-5 text-sm">
-        <div className="rounded-xl bg-gradient-to-br from-indigo-50 to-violet-50 p-4 ring-1 ring-inset ring-indigo-100">
+      <div className="space-y-4 border-t border-neutral-100 px-6 py-5 text-sm">
+        <div className="rounded-xl bg-cream p-4 ring-1 ring-inset ring-neutral-200">
           <SectionTitle Icon={Umbrella}>Plan B · {plan.plan_b.trigger}</SectionTitle>
-          <p className="mt-1.5 text-sm leading-relaxed text-slate-800">{plan.plan_b.suggestion}</p>
+          <p className="mt-1.5 text-sm leading-relaxed text-neutral-800">{plan.plan_b.suggestion}</p>
         </div>
         {plan.left_out && plan.left_out.length > 0 && (
           <div>
             <SectionTitle Icon={CircleSlash}>Not included</SectionTitle>
-            <ul className="mt-1.5 space-y-1 text-xs leading-relaxed text-slate-600">
+            <ul className="mt-1.5 space-y-1 text-xs leading-relaxed text-neutral-600">
               {plan.left_out.map((x) => (
                 <li key={x.interest}>
-                  <span className="font-semibold capitalize text-slate-800">{x.interest}:</span> {x.reason}
+                  <span className="font-semibold capitalize text-neutral-800">{x.interest}:</span> {x.reason}
                 </li>
               ))}
             </ul>
@@ -279,7 +279,7 @@ export function PlanView({ plan, onRestart }: { plan: RenderedPlan; onRestart: (
         {v.warnings.length > 0 && (
           <div>
             <SectionTitle Icon={TriangleAlert}>Worth knowing</SectionTitle>
-            <ul className="mt-1.5 list-disc space-y-1 pl-5 text-xs leading-relaxed text-slate-600 marker:text-slate-300">
+            <ul className="mt-1.5 list-disc space-y-1 pl-5 text-xs leading-relaxed text-neutral-600 marker:text-neutral-300">
               {v.warnings.map((w) => (
                 <li key={w}>{w}</li>
               ))}
@@ -289,7 +289,7 @@ export function PlanView({ plan, onRestart }: { plan: RenderedPlan; onRestart: (
         {plan.tips.length > 0 && (
           <div>
             <SectionTitle Icon={Lightbulb}>Tips</SectionTitle>
-            <ul className="mt-1.5 list-disc space-y-1 pl-5 text-xs leading-relaxed text-slate-600 marker:text-slate-300">
+            <ul className="mt-1.5 list-disc space-y-1 pl-5 text-xs leading-relaxed text-neutral-600 marker:text-neutral-300">
               {plan.tips.map((t) => (
                 <li key={t}>{t}</li>
               ))}
@@ -299,7 +299,7 @@ export function PlanView({ plan, onRestart }: { plan: RenderedPlan; onRestart: (
         {plan.assumptions.length > 0 && (
           <div>
             <SectionTitle Icon={Info}>Assumptions</SectionTitle>
-            <ul className="mt-1.5 list-disc space-y-1 pl-5 text-xs leading-relaxed text-slate-500 marker:text-slate-300">
+            <ul className="mt-1.5 list-disc space-y-1 pl-5 text-xs leading-relaxed text-neutral-500 marker:text-neutral-300">
               {plan.assumptions.map((a) => (
                 <li key={a}>{a}</li>
               ))}
@@ -308,12 +308,12 @@ export function PlanView({ plan, onRestart }: { plan: RenderedPlan; onRestart: (
         )}
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 border-t border-slate-100 bg-slate-50/80 px-6 py-3.5">
+      <div className="flex flex-wrap items-center gap-2 border-t border-neutral-100 bg-white px-6 py-4">
         <a
           href={plan.route_url}
           target="_blank"
           rel="noreferrer"
-          className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3.5 py-2 text-xs font-semibold text-white transition hover:bg-slate-700"
+          className="inline-flex items-center gap-1.5 rounded-full bg-neutral-950 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-neutral-800"
         >
           <MapPin className="h-3.5 w-3.5" aria-hidden />
           Open route in Google Maps
@@ -321,12 +321,12 @@ export function PlanView({ plan, onRestart }: { plan: RenderedPlan; onRestart: (
         <button
           type="button"
           onClick={onRestart}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 transition hover:border-indigo-400 hover:text-indigo-700"
+          className="inline-flex items-center gap-1.5 rounded-full bg-cream px-4 py-2 text-xs font-semibold uppercase tracking-wide text-neutral-900 transition hover:bg-cream-dark"
         >
           <RotateCcw className="h-3.5 w-3.5" aria-hidden />
           Start over
         </button>
-        <span className="ml-auto text-[11px] text-slate-400">
+        <span className="ml-auto text-[11px] text-neutral-400">
           {plan.generated_by === "agent" ? `Planned by ${plan.model ?? "LLM"} on Groq` : "Rule-based fallback"} · {v.violations.length} validator violations
         </span>
       </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, LoaderCircle, MessageSquareText, PenLine } from "lucide-react";
+import { ArrowUpRight, LoaderCircle, MessageSquareText, PenLine } from "lucide-react";
 import { useState } from "react";
 import type { PlanBody } from "./useAgentStream";
 
@@ -27,8 +27,8 @@ function Chips({ options, value, onChange }: { options: string[]; value: string[
             onClick={() => onChange(on ? value.filter((x) => x !== o) : [...value, o])}
             className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
               on
-                ? "border-indigo-600 bg-indigo-600 text-white shadow-sm shadow-indigo-600/20"
-                : "border-slate-200 bg-white text-slate-600 hover:border-indigo-300 hover:text-indigo-700"
+                ? "border-neutral-950 bg-neutral-950 text-white"
+                : "border-neutral-200 bg-white text-neutral-600 hover:border-neutral-400 hover:text-neutral-950"
             }`}
           >
             {o.charAt(0).toUpperCase() + o.slice(1)}
@@ -39,9 +39,9 @@ function Chips({ options, value, onChange }: { options: string[]; value: string[
   );
 }
 
-const label = "mb-1.5 block text-xs font-medium text-slate-600";
+const label = "mb-1.5 block text-xs font-medium text-neutral-600";
 const input =
-  "w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 transition focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-100";
+  "w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 placeholder:text-neutral-400 transition focus:border-neutral-900 focus:outline-none focus:ring-4 focus:ring-neutral-200";
 
 export function InputPanel({ onSubmit, running }: { onSubmit: (b: PlanBody) => void; running: boolean }) {
   const [mode, setMode] = useState<"text" | "form">("form");
@@ -80,8 +80,8 @@ export function InputPanel({ onSubmit, running }: { onSubmit: (b: PlanBody) => v
   ];
 
   return (
-    <form onSubmit={submit} className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm shadow-slate-900/5">
-      <div className="mb-5 grid grid-cols-2 rounded-xl bg-slate-100 p-1 text-sm" role="tablist">
+    <form onSubmit={submit} className="rounded-2xl border border-neutral-200/80 bg-white p-5 shadow-sm shadow-neutral-900/5">
+      <div className="mb-5 grid grid-cols-2 rounded-full bg-cream p-1 text-sm" role="tablist">
         {tabs.map(({ id, label: l, Icon }) => (
           <button
             key={id}
@@ -89,8 +89,8 @@ export function InputPanel({ onSubmit, running }: { onSubmit: (b: PlanBody) => v
             role="tab"
             aria-selected={mode === id}
             onClick={() => setMode(id)}
-            className={`flex items-center justify-center gap-2 rounded-lg py-2 font-medium transition ${
-              mode === id ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
+            className={`flex items-center justify-center gap-2 rounded-full py-2 font-medium transition ${
+              mode === id ? "bg-white text-neutral-900 shadow-sm" : "text-neutral-500 hover:text-neutral-700"
             }`}
           >
             <Icon className="h-4 w-4" aria-hidden />
@@ -110,14 +110,14 @@ export function InputPanel({ onSubmit, running }: { onSubmit: (b: PlanBody) => v
             placeholder="Where you are, how much time and budget you have, how you're feeling and what you enjoy."
           />
           <div>
-            <p className="mb-1.5 text-xs text-slate-500">Try an example</p>
+            <p className="mb-1.5 text-xs text-neutral-500">Try an example</p>
             <div className="flex flex-wrap gap-1.5">
               {EXAMPLES.map((ex) => (
                 <button
                   key={ex.label}
                   type="button"
                   onClick={() => setText(ex.text)}
-                  className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs text-slate-600 transition hover:border-indigo-300 hover:text-indigo-700"
+                  className="rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1 text-xs text-neutral-600 transition hover:border-neutral-400 hover:text-neutral-950"
                 >
                   {ex.label}
                 </button>
@@ -172,17 +172,16 @@ export function InputPanel({ onSubmit, running }: { onSubmit: (b: PlanBody) => v
       <button
         type="submit"
         disabled={running}
-        className="group mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-600/25 transition hover:from-indigo-500 hover:to-violet-500 disabled:cursor-not-allowed disabled:opacity-70"
+        className="group mt-6 flex w-full items-center justify-between gap-2 rounded-full bg-neutral-950 py-2 pl-6 pr-2 text-sm font-semibold uppercase tracking-wide text-white shadow-sm transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-70"
       >
-        {running ? (
-          <>
-            <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden /> Building your plan
-          </>
-        ) : (
-          <>
-            Create my plan <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" aria-hidden />
-          </>
-        )}
+        <span>{running ? "Building your plan" : "Create my plan"}</span>
+        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-neutral-950">
+          {running ? (
+            <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden />
+          ) : (
+            <ArrowUpRight className="h-4 w-4 transition group-hover:-translate-y-0.5 group-hover:translate-x-0.5" aria-hidden />
+          )}
+        </span>
       </button>
     </form>
   );

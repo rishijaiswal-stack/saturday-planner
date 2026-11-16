@@ -117,7 +117,9 @@ export function upcomingSaturday(now = new Date()): string {
   let add = (6 - day + 7) % 7;
   if (add === 0 && d.getHours() >= 18) add = 7;
   d.setDate(d.getDate() + add);
-  return d.toISOString().slice(0, 10);
+  // Local calendar date. toISOString() would convert to UTC and, east of UTC
+  // in the early morning, return Friday (and fetch Friday's forecast).
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
 // Saturday crowd curve: evenings and lunch peaks bump crowd one level for

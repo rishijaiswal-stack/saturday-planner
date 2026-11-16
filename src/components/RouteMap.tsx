@@ -20,8 +20,8 @@ export interface MapPoint {
 }
 
 const COLORS: Record<MapPoint["kind"], string> = {
-  start: "#0f172a", // slate-900
-  activity: "#4f46e5", // indigo-600
+  start: "#737373", // neutral-500
+  activity: "#0a0a0a", // near-black
   food: "#f59e0b", // amber-500
 };
 
@@ -60,7 +60,7 @@ export default function RouteMap({ points }: { points: MapPoint[] }) {
         maxZoom={19}
         className="saturate-[.55] contrast-[.95]"
       />
-      <Polyline positions={line} pathOptions={{ color: "#4f46e5", weight: 3, opacity: 0.75, dashArray: "6 8" }} />
+      <Polyline positions={line} pathOptions={{ color: "#0a0a0a", weight: 2.5, opacity: 0.55, dashArray: "6 8" }} />
       {points.map((p) => (
         <Marker key={`${p.label}-${p.lat}-${p.lon}`} position={[p.lat, p.lon]} icon={pin(p)}>
           <Tooltip direction="top" offset={[0, -14]}>
