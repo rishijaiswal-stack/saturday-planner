@@ -48,6 +48,16 @@ This came from live testing. The model kept underestimating Bangalore travel and
 
 Grounding is what makes "avoid unrealistic suggestions" structural rather than a hope: **the model physically cannot put a made-up venue in the final plan.**
 
+**Completeness is enforced through structure, not keywords.** Two failure modes showed up in testing: a ₹12,000 budget producing a ₹483 plan with no explanation, and a selected interest (shopping) silently dropped. Asking the model to "explain in the summary" didn't work; it wrote "fits your budget" and passed a keyword check. So the design changed:
+
+- The validator works out from data which stated interests no stop covers, and what share of the budget the plan uses.
+- `finalize_plan` has two structured fields: `left_out` (interest + reason) and `budget_note`.
+- The server checks every uncovered interest has a matching `left_out` entry and that a generous budget left mostly unused has a `budget_note`. If not, it sends the plan back once with exactly what's missing.
+- If the model still doesn't comply, code fills in honest default text rather than looping.
+- The UI shows both: a budget note under the budget bar and a "Not included" section. The user always knows what was skipped and why.
+
+The budget is treated as a **ceiling, not a target**. With a generous budget, ranking nudges substantive paid options up (a nicer restaurant, a ticketed venue) so the model has good upgrades to choose from. The validator also adds weather-comfort warnings for outdoor stops below 5°C or above 38°C, which came from a Leh test in November at −2°C.
+
 ## 3. LLM: Groq free tier with model routing and fallback chains
 
 - **Why Groq:** free with no credit card, the fastest inference available (good for a live demo where latency is the UX), OpenAI-compatible tool calling, and good open models.
@@ -164,7 +174,10 @@ The app retries once, then switches to the next model (separate bucket), and fin
 The brief rewards resourcefulness, and this costs $0. Speed matters for demo UX, and Groq is the fastest option. The validator compensates for weaker models. The provider is isolated in one file, so swapping is a 30-minute change if quality matters more than cost.
 
 **"How would you evaluate plan quality?"**
-1. Build a persona set: ~30 scripted inputs covering vague, conflicting, tiny-budget, rainy and unknown-city cases.
+There's already a working harness: `npm run eval` runs 10 scenarios through the real agent (real LLM, real data) and checks hard expectations: plan vs clarification, no violations, within budget, veg respected, every uncovered interest explained, an underused budget explained, no leaked internal IDs. Latest results are in [eval/RESULTS.md](eval/RESULTS.md). The cases cover the brief's example, Leh with a generous budget, a Mumbai couple in free text, ₹500 in Delhi, vague input, a made-up city, London in pounds, Hampi (sparse data), a Pune family wanting free things, and a neighbourhood start point.
+
+Next steps would be:
+1. Grow the set to ~30 personas, including rainy days and conflicting constraints.
 2. Automatic metrics, mostly free because the validator exists:
    - first-attempt validity rate
    - fallback rate

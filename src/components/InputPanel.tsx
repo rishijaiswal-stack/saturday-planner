@@ -1,5 +1,6 @@
 "use client";
 
+import { ArrowRight, LoaderCircle, MessageSquareText, PenLine } from "lucide-react";
 import { useState } from "react";
 import type { PlanBody } from "./useAgentStream";
 
@@ -7,10 +8,10 @@ const INTERESTS = ["food", "music", "walks", "art", "books", "coffee", "history"
 const CONSTRAINTS = ["vegetarian", "avoid crowded places", "no long commutes", "kid-friendly", "wheelchair accessible"];
 
 const EXAMPLES = [
-  { label: "Brief's example", text: "I'm in Bangalore with ₹2000 and 4 hours. Tired but want to do something fun. I like food, music and walks. Vegetarian, and I'd rather avoid crowded places." },
-  { label: "Vague (asks questions)", text: "plan something fun for my saturday" },
-  { label: "Date in Mumbai", text: "Me and my partner in Mumbai, ₹3500 total, from 4pm to 10pm. Feeling energetic! We love art, the sea and good vegetarian food." },
-  { label: "Tight budget, Delhi", text: "Delhi, only ₹500, 3 hours in the morning, love history and walking. Pure veg." },
+  { label: "Brief example", text: "I'm in Bangalore with ₹2000 and 4 hours. Tired but want to do something fun. I like food, music and walks. Vegetarian, and I'd rather avoid crowded places." },
+  { label: "Vague request", text: "Plan something fun for my Saturday." },
+  { label: "Evening for two, Mumbai", text: "My partner and I are in Mumbai with ₹3500 in total, free from 4pm to 10pm. We're feeling energetic and love art, the sea and good vegetarian food." },
+  { label: "Tight budget, Delhi", text: "Delhi, only ₹500, three hours in the morning from 9am. I love history and walking. Pure vegetarian." },
 ];
 
 function Chips({ options, value, onChange }: { options: string[]; value: string[]; onChange: (v: string[]) => void }) {
@@ -22,12 +23,15 @@ function Chips({ options, value, onChange }: { options: string[]; value: string[
           <button
             key={o}
             type="button"
+            aria-pressed={on}
             onClick={() => onChange(on ? value.filter((x) => x !== o) : [...value, o])}
-            className={`rounded-full border px-2.5 py-1 text-xs transition ${
-              on ? "border-orange-500 bg-orange-500 text-white" : "border-stone-300 bg-white text-stone-700 hover:border-orange-400"
+            className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
+              on
+                ? "border-indigo-600 bg-indigo-600 text-white shadow-sm shadow-indigo-600/20"
+                : "border-slate-200 bg-white text-slate-600 hover:border-indigo-300 hover:text-indigo-700"
             }`}
           >
-            {o}
+            {o.charAt(0).toUpperCase() + o.slice(1)}
           </button>
         );
       })}
@@ -35,9 +39,9 @@ function Chips({ options, value, onChange }: { options: string[]; value: string[
   );
 }
 
-const label = "block text-xs font-medium text-stone-600 mb-1";
+const label = "mb-1.5 block text-xs font-medium text-slate-600";
 const input =
-  "w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 placeholder:text-stone-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-200";
+  "w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 transition focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-100";
 
 export function InputPanel({ onSubmit, running }: { onSubmit: (b: PlanBody) => void; running: boolean }) {
   const [mode, setMode] = useState<"text" | "form">("form");
@@ -70,17 +74,27 @@ export function InputPanel({ onSubmit, running }: { onSubmit: (b: PlanBody) => v
     });
   };
 
+  const tabs = [
+    { id: "form" as const, label: "Fill a form", Icon: PenLine },
+    { id: "text" as const, label: "Describe it", Icon: MessageSquareText },
+  ];
+
   return (
-    <form onSubmit={submit} className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
-      <div className="mb-4 flex rounded-lg bg-stone-100 p-1 text-sm">
-        {(["form", "text"] as const).map((m) => (
+    <form onSubmit={submit} className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm shadow-slate-900/5">
+      <div className="mb-5 grid grid-cols-2 rounded-xl bg-slate-100 p-1 text-sm" role="tablist">
+        {tabs.map(({ id, label: l, Icon }) => (
           <button
-            key={m}
+            key={id}
             type="button"
-            onClick={() => setMode(m)}
-            className={`flex-1 rounded-md py-1.5 font-medium transition ${mode === m ? "bg-white text-stone-900 shadow-sm" : "text-stone-500"}`}
+            role="tab"
+            aria-selected={mode === id}
+            onClick={() => setMode(id)}
+            className={`flex items-center justify-center gap-2 rounded-lg py-2 font-medium transition ${
+              mode === id ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
+            }`}
           >
-            {m === "form" ? "Quick form" : "Just tell me"}
+            <Icon className="h-4 w-4" aria-hidden />
+            {l}
           </button>
         ))}
       </div>
@@ -93,17 +107,17 @@ export function InputPanel({ onSubmit, running }: { onSubmit: (b: PlanBody) => v
             rows={6}
             maxLength={1500}
             className={input}
-            placeholder="Where are you, how much time and money, what's your mood, what do you like?"
+            placeholder="Where you are, how much time and budget you have, how you're feeling and what you enjoy."
           />
           <div>
-            <p className="mb-1.5 text-xs text-stone-500">Try an example:</p>
+            <p className="mb-1.5 text-xs text-slate-500">Try an example</p>
             <div className="flex flex-wrap gap-1.5">
               {EXAMPLES.map((ex) => (
                 <button
                   key={ex.label}
                   type="button"
                   onClick={() => setText(ex.text)}
-                  className="rounded-full border border-stone-200 bg-stone-50 px-2.5 py-1 text-xs text-stone-600 hover:border-orange-400"
+                  className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs text-slate-600 transition hover:border-indigo-300 hover:text-indigo-700"
                 >
                   {ex.label}
                 </button>
@@ -112,18 +126,18 @@ export function InputPanel({ onSubmit, running }: { onSubmit: (b: PlanBody) => v
           </div>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className={label}>City</label>
               <input className={input} value={f.city} onChange={set("city")} required />
             </div>
             <div>
-              <label className={label}>Area (optional)</label>
+              <label className={label}>Neighbourhood (optional)</label>
               <input className={input} value={f.area} onChange={set("area")} placeholder="e.g. Indiranagar" />
             </div>
             <div>
-              <label className={label}>Budget (total)</label>
+              <label className={label}>Total budget</label>
               <input className={input} value={f.budget} onChange={set("budget")} inputMode="numeric" placeholder="2000" />
             </div>
             <div>
@@ -140,8 +154,8 @@ export function InputPanel({ onSubmit, running }: { onSubmit: (b: PlanBody) => v
             </div>
           </div>
           <div>
-            <label className={label}>Mood</label>
-            <input className={input} value={f.mood} onChange={set("mood")} placeholder="tired but wants to do something fun" />
+            <label className={label}>How are you feeling?</label>
+            <input className={input} value={f.mood} onChange={set("mood")} placeholder="Tired, but up for something fun" />
           </div>
           <div>
             <label className={label}>Interests</label>
@@ -150,7 +164,7 @@ export function InputPanel({ onSubmit, running }: { onSubmit: (b: PlanBody) => v
           <div>
             <label className={label}>Constraints</label>
             <Chips options={CONSTRAINTS} value={constraints} onChange={setConstraints} />
-            <input className={`${input} mt-2`} value={extraC} onChange={(e) => setExtraC(e.target.value)} placeholder="anything else? (comma separated)" />
+            <input className={`${input} mt-2`} value={extraC} onChange={(e) => setExtraC(e.target.value)} placeholder="Anything else? Separate with commas" />
           </div>
         </div>
       )}
@@ -158,9 +172,17 @@ export function InputPanel({ onSubmit, running }: { onSubmit: (b: PlanBody) => v
       <button
         type="submit"
         disabled={running}
-        className="mt-5 w-full rounded-xl bg-gradient-to-r from-orange-500 to-rose-500 py-3 text-sm font-semibold text-white shadow-md transition hover:opacity-95 disabled:opacity-60"
+        className="group mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-600/25 transition hover:from-indigo-500 hover:to-violet-500 disabled:cursor-not-allowed disabled:opacity-70"
       >
-        {running ? "Planning your Saturday…" : "Plan my Saturday ✨"}
+        {running ? (
+          <>
+            <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden /> Building your plan
+          </>
+        ) : (
+          <>
+            Create my plan <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" aria-hidden />
+          </>
+        )}
       </button>
     </form>
   );

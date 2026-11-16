@@ -85,6 +85,7 @@ Useful scripts:
 ```bash
 npm run agent                                  # run the agent in the terminal on the brief's example
 npm run agent -- "plan something fun"          # or any free text
+npm run eval                                   # scenario harness: 10 cases through the real agent → eval/RESULTS.md
 npm run typecheck && npm run lint && npm run build
 ```
 

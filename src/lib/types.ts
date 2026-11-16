@@ -24,6 +24,7 @@ export interface Place {
   hours?: string; // "HH:MM-HH:MM" (curated only; OSM via Photon has none)
   veg?: VegStatus; // food only
   notes?: string;
+  notable?: boolean; // has a Wikipedia article linked in OSM (a cheap notability signal)
   distance_km?: number; // from the user's anchor point
   interest?: string; // which user interest surfaced this place
 }
@@ -101,6 +102,8 @@ export interface ValidationResult {
     currency: string;
   };
   total_minutes: number;
+  uncovered_interests: string[];
+  budget_share: number; // total / budget
 }
 
 export interface FinalStop {
@@ -119,6 +122,8 @@ export interface FinalPlan {
   plan_b: { trigger: string; suggestion: string };
   tips: string[];
   assumptions: string[];
+  budget_note?: string; // why a generous budget is mostly unused
+  left_out?: { interest: string; reason: string }[]; // stated interests not covered
 }
 
 // What the UI renders: LLM prose merged with code-computed facts.

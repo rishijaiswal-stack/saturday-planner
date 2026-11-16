@@ -8,11 +8,13 @@
     "start": "next start",
     "lint": "eslint",
     "agent": "tsx scripts/run-agent.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "eval": "tsx scripts/eval.ts"
   },
   "dependencies": {
     "groq-sdk": "^1.6.0",
     "leaflet": "^1.9.4",
+    "lucide-react": "^1.73.0",
     "next": "16.4.6",
     "react": "19.3.0",
     "react-dom": "19.3.0",

@@ -30,7 +30,7 @@ const MAP: Record<string, InterestQuery> = {
     photon: [{ q: "gallery", tags: ["tourism:gallery", "amenity:arts_centre"] }, { q: "museum", tags: ["tourism:museum"] }],
     geo: ["entertainment.culture.gallery", "entertainment.culture.arts_centre", "entertainment.museum"],
   },
-  museum: { photon: [{ q: "museum", tags: ["tourism:museum"] }], geo: ["entertainment.museum"] },
+  museum: { photon: [{ q: "museum", tags: ["tourism:museum", "tourism:gallery"] }], geo: ["entertainment.museum", "entertainment.culture.gallery"] },
   history: {
     photon: [{ q: "fort", tags: ["historic:fort", "historic:castle", "tourism:attraction"] }, { q: "museum", tags: ["tourism:museum"] }],
     geo: ["tourism.sights", "entertainment.museum"],
@@ -41,6 +41,7 @@ const MAP: Record<string, InterestQuery> = {
   theatre: { photon: [{ q: "theatre", tags: ["amenity:theatre"] }], geo: ["entertainment.culture.theatre"] },
   games: { photon: [{ q: "bowling", tags: ["leisure:bowling_alley"] }, { q: "games", tags: ["leisure:amusement_arcade"] }], geo: ["entertainment"] },
   coffee: { photon: [{ q: "cafe", tags: ["amenity:cafe"] }], geo: ["catering.cafe"] },
+  nightlife: { photon: [{ q: "pub", tags: ["amenity:pub", "amenity:bar"] }, { q: "bar", tags: ["amenity:bar", "amenity:pub"] }], geo: ["catering.pub", "catering.bar", "catering.taproom"] },
 };
 const SYNONYMS: [RegExp, string][] = [
   [/walk|stroll|hike|park|outdoor/, "walk"],
@@ -55,6 +56,7 @@ const SYNONYMS: [RegExp, string][] = [
   [/theat|play|drama|comedy|standup|stand-up/, "theatre"],
   [/game|bowling|arcade/, "games"],
   [/coffee|cafe/, "coffee"],
+  [/pub|bar\b|bars|beer|brew|drink|cocktail|nightlife|club/, "nightlife"],
 ];
 
 export function canonicalInterest(interest: string): string {

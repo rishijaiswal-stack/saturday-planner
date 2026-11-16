@@ -50,7 +50,7 @@ export interface ChatResult {
   content: string;
   reasoning: string;
   toolCalls: ToolCall[];
-  usage: { input: number; output: number };
+  usage: { input: number; output: number; cached: number };
 }
 
 export interface ChatOptions {
@@ -131,7 +131,7 @@ async function chatOnce(model: string, opts: ChatOptions): Promise<ChatResult> {
   let content = "";
   let reasoning = "";
   const calls = new Map<number, ToolCall>();
-  let usage = { input: 0, output: 0 };
+  let usage = { input: 0, output: 0, cached: 0 };
   for await (const chunk of stream) {
     const delta = chunk.choices[0]?.delta;
     if (delta?.reasoning) {
@@ -147,7 +147,12 @@ async function chatOnce(model: string, opts: ChatOptions): Promise<ChatResult> {
       calls.set(tc.index, cur);
     }
     const u = chunk.x_groq?.usage;
-    if (u) usage = { input: u.prompt_tokens ?? 0, output: u.completion_tokens ?? 0 };
+    // Groq caches exact prompt prefixes on gpt-oss models; cached tokens don't
+    // count toward the free-tier TPM limit, so we track them separately.
+    if (u) {
+      const details = (u as { prompt_tokens_details?: { cached_tokens?: number } }).prompt_tokens_details;
+      usage = { input: u.prompt_tokens ?? 0, output: u.completion_tokens ?? 0, cached: details?.cached_tokens ?? 0 };
+    }
   }
   // Some models leak <think> blocks into content; strip them.
   content = content.replace(/<think>[\s\S]*?<\/think>/g, "").trim();

@@ -74,8 +74,7 @@ export async function geoapifySearch(
     const tokens = (p.categories ?? []).flatMap((c) => c.split(".")).filter(Boolean);
     const raw = p.datasource?.raw ?? {};
     const oh = (p.opening_hours ?? raw["opening_hours"]) as string | undefined;
-    out.push(
-      makePlace({
+    const place = makePlace({
         id: `geo:${shortId(p.place_id ?? `${p.lat},${p.lon},${p.name}`)}`,
         name: p.name,
         kind,
@@ -87,8 +86,11 @@ export async function geoapifySearch(
         hours: saturdayHours(oh),
         veg: vegOf(p) ?? (conditions?.includes(".only") ? "pure_veg" : conditions ? "veg_friendly" : undefined),
         distance_km: round1((p.distance ?? 0) / 1000),
-      }),
-    );
+      });
+    // OSM tags we can trust more than category heuristics.
+    place.notable = Boolean(raw["wikipedia"]); // Wikipedia article = genuinely well-known (Wikidata alone is too broad)
+    if (raw["fee"] === "no") place.est_cost_per_person = 0;
+    out.push(place);
   }
   return out;
 }

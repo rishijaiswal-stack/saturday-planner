@@ -18,6 +18,7 @@ import {
   getActivityOptions,
   getFoodOptions,
   parsePreferences,
+  budgetUnderused,
   placeLine,
   Registry,
   repairPlan,
@@ -76,6 +77,12 @@ const FinalizeArgs = z.object({
     .min(1),
   plan_b: z.object({ trigger: z.string(), suggestion: z.string() }),
   tips: z.array(z.string()).optional().default([]),
+  budget_note: z.string().nullable().optional(),
+  left_out: z
+    .array(z.object({ interest: z.string(), reason: z.string() }))
+    .nullable()
+    .optional()
+    .transform((v) => v ?? []),
 });
 
 const fn = (name: string, description: string, parameters: Record<string, unknown>): ChatCompletionTool => ({
@@ -165,6 +172,19 @@ const PLAN_TOOLS: ChatCompletionTool[] = [
         required: ["trigger", "suggestion"],
       },
       tips: { type: "array", items: { type: "string" } },
+      budget_note: {
+        type: ["string", "null"],
+        description: "Required when the plan uses under 30% of a generous budget: one sentence on why low-cost suits them (or what to add if they want to splurge).",
+      },
+      left_out: {
+        type: ["array", "null"],
+        description: "One entry per stated interest that no stop covers, with an honest reason.",
+        items: {
+          type: "object",
+          properties: { interest: { type: "string" }, reason: { type: "string" } },
+          required: ["interest", "reason"],
+        },
+      },
     },
     required: ["title", "summary", "stops", "plan_b", "tips"],
   }),
@@ -246,6 +266,7 @@ function render(
     })),
     plan_b: { trigger: scrub(plan.plan_b.trigger), suggestion: scrub(plan.plan_b.suggestion) },
     tips: plan.tips.map(scrub),
+    left_out: plan.left_out?.map((x) => ({ interest: x.interest, reason: scrub(x.reason) })),
     assumptions: [...prefs.assumptions, ...plan.assumptions],
     generated_by: by,
     model,
@@ -277,7 +298,7 @@ export async function runAgent(req: PlanRequest, emit: Emit): Promise<void> {
   const llmDown = (e: unknown) => {
     llmUp = false;
     const why = e instanceof NoKeyError ? "no GROQ_API_KEY configured" : e instanceof AllModelsFailedError ? "all models rate-limited/unavailable" : (e as Error).message;
-    emit({ type: "status", message: `LLM unavailable (${why}) - switching to the rule-based planner.` });
+    emit({ type: "status", message: `The AI model is unavailable (${why}); switching to the rule-based planner.` });
   };
 
   // ---------------- Phase 1: understand ----------------
@@ -299,6 +320,7 @@ export async function runAgent(req: PlanRequest, emit: Emit): Promise<void> {
       onStatus: (m) => emit({ type: "status", message: m }),
     });
     usage.input += r.usage.input;
+    usage.cache_read += r.usage.cached;
     usage.output += r.usage.output;
     usage.turns++;
     const call = r.toolCalls[0];
@@ -393,6 +415,11 @@ export async function runAgent(req: PlanRequest, emit: Emit): Promise<void> {
       : null;
     if (salvaged) emit({ type: "status", message: "Using the agent's last validated draft." });
     const { plan, validation } = salvaged ?? rulesPlan(prefs, acts.places, foods.places, weather, registry);
+    // Same completeness rules as the agent path, filled deterministically.
+    plan.left_out = validation.uncovered_interests.map((i) => ({ interest: i, reason: "No suitable option fit within your time window and constraints." }));
+    if (budgetUnderused(validation.cost.total, prefs)) {
+      plan.budget_note = `This plan keeps most of your ${prefs.currency}${prefs.budget} budget free; the best-fitting options nearby happen to be low-cost.`;
+    }
     emit({
       type: "tool_result",
       id: "rules",
@@ -414,7 +441,7 @@ export async function runAgent(req: PlanRequest, emit: Emit): Promise<void> {
       role: "user",
       content: [
         prefsBlock(prefs, weather),
-        `ACTIVITY CANDIDATES (id | name | category | distance | cost/person (~=estimate) | crowd | in/outdoor | energy | typical time | hours | ...):`,
+        `ACTIVITY CANDIDATES (id | name | category | distance | cost/person (~=estimate) | crowd | in/outdoor | energy | typical time | hours | ...; "notable" = well-known, has a Wikipedia entry; prefer notable places when they fit):`,
         ...acts.places.map((p) => placeLine(p, prefs.currency)),
         `FOOD CANDIDATES:`,
         ...foods.places.map((p) => placeLine(p, prefs.currency)),
@@ -425,6 +452,7 @@ export async function runAgent(req: PlanRequest, emit: Emit): Promise<void> {
 
   let modelIndex = 0;
   let finalizeAttempts = 0;
+  let qualityNudged = false;
   let searches = 0;
   const MAX_TURNS = 7;
   for (let turn = 0; turn < MAX_TURNS; turn++) {
@@ -446,6 +474,7 @@ export async function runAgent(req: PlanRequest, emit: Emit): Promise<void> {
     }
     modelIndex = r.modelIndex; // stick with the model that worked
     usage.input += r.usage.input;
+    usage.cache_read += r.usage.cached;
     usage.output += r.usage.output;
     usage.turns++;
 
@@ -516,6 +545,31 @@ export async function runAgent(req: PlanRequest, emit: Emit): Promise<void> {
           reply(`REJECTED. Fix every violation and call finalize_plan again.\n${rep.notes.length ? `(server already tried: ${rep.notes.join("; ")})\n` : ""}${validationText(v)}`);
           continue;
         }
+        lastValidDraft = stops;
+        // Quality gate (structured, not keyword-matched): every uncovered
+        // interest needs a left_out entry and an underused generous budget
+        // needs a budget_note. One nudge; then code fills honest defaults.
+        const leftOut = a.data.left_out.filter((x) => x.interest && x.reason);
+        const missingInterests = v.uncovered_interests.filter(
+          (i) => !leftOut.some((x) => x.interest.toLowerCase().includes(i.toLowerCase()) || i.toLowerCase().includes(x.interest.toLowerCase())),
+        );
+        const needsBudgetNote = budgetUnderused(v.cost.total, prefs) && !a.data.budget_note?.trim();
+        if ((missingInterests.length || needsBudgetNote) && !qualityNudged) {
+          qualityNudged = true;
+          const asks = [
+            missingInterests.length ? `cover ${missingInterests.join(", ")} with a stop, or list each in left_out with an honest reason` : "",
+            needsBudgetNote ? `the plan uses ${Math.round(v.budget_share * 100)}% of a ${prefs.currency}${prefs.budget} budget: upgrade a stop to a nicer paid option from the candidates, or fill budget_note with one sentence explaining why low-cost suits them` : "",
+          ].filter(Boolean);
+          emit({ type: "status", message: `Plan is valid but incomplete; asking the agent to ${asks.length > 1 ? "address coverage and budget" : missingInterests.length ? "address missing interests" : "address the unused budget"}` });
+          reply(`ALMOST ACCEPTED. Before finalizing: ${asks.join("; ")}. Then call finalize_plan again with the full plan.`);
+          continue;
+        }
+        for (const i of missingInterests) leftOut.push({ interest: i, reason: "No suitable option fit within your time window and constraints." });
+        const budgetNote =
+          a.data.budget_note?.trim() ||
+          (budgetUnderused(v.cost.total, prefs)
+            ? `This plan keeps most of your ${prefs.currency}${prefs.budget} budget free; the best-fitting options nearby happen to be low-cost.`
+            : undefined);
         const plan: FinalPlan = {
           title: a.data.title,
           summary: a.data.summary,
@@ -525,6 +579,8 @@ export async function runAgent(req: PlanRequest, emit: Emit): Promise<void> {
           }),
           plan_b: a.data.plan_b,
           tips: a.data.tips.slice(0, 3),
+          budget_note: budgetNote ? scrub(budgetNote) : undefined,
+          left_out: leftOut,
           assumptions: [],
         };
         emit({ type: "plan", plan: render(plan, v, prefs, weather, registry, "agent", r.model) });

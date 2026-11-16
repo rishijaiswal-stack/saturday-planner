@@ -151,7 +151,7 @@ export function describePlan(
   origin: string,
 ): FinalPlan {
   return {
-    title: `A ${prefs.energy === "low" ? "gentle" : "fun"} Saturday in ${prefs.city}`,
+    title: `A ${prefs.energy === "low" ? "relaxed" : "well-paced"} Saturday in ${prefs.city}`,
     summary: `${origin}, ranked for your interests (${prefs.interests.join(", ") || "general"}), ${prefs.dietary !== "none" ? `${prefs.dietary} diet, ` : ""}${prefs.avoid_crowds ? "low crowds, " : ""}and your ${prefs.currency}${prefs.budget} budget.`,
     stops: stops.map((s) => {
       const p = registry.get(s.place_id)!;
@@ -163,7 +163,7 @@ export function describePlan(
       ].filter(Boolean);
       return {
         ...s,
-        what_to_do: p.notes ?? (p.kind === "food" ? "Grab a relaxed meal." : `Spend some unhurried time at ${p.name}.`),
+        what_to_do: p.notes ?? (p.kind === "food" ? "Settle in for an unhurried meal." : `Spend unhurried time at ${p.name}.`),
         why_it_fits: `${reasons.join(", ")}.`.replace(/^./, (c) => c.toUpperCase()),
       };
     }),
@@ -176,7 +176,7 @@ export function describePlan(
         return alt ? `Swap in ${alt.name} (indoor, ${alt.distance_km} km away).` : "Swap the outdoor stop for a long cafe sit-down near your food stop.";
       })(),
     },
-    tips: ["Check today's opening hours on Google Maps before heading out.", "Book an auto/cab a few minutes before each leg; Saturday evenings are slower."],
+    tips: ["Confirm opening hours on Google Maps before heading out.", "Book each auto or cab a few minutes early; Saturday evening traffic is slower."],
     assumptions: [],
   };
 }

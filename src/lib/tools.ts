@@ -189,24 +189,35 @@ function withDistance(p: Place, prefs: Preferences): Place {
   return { ...p, distance_km: round1(haversineKm(prefs.lat, prefs.lon, p.lat, p.lon)) };
 }
 
+const INTEREST_WORDS: Record<string, RegExp> = {
+  walk: /walk|park|garden|lake|street|promenade|water/,
+  nature: /park|garden|lake|nature|water/,
+  music: /music|concert|jazz|rock|live|arts_centre/,
+  art: /art|gallery|museum/,
+  museum: /museum/,
+  history: /history|palace|fort|monument|castle|sights|heritage|temple/,
+  books: /book/,
+  shopping: /mall|market|shop|bazaar/,
+  movies: /cinema|movie/,
+  theatre: /theatre/,
+  games: /game|bowling|arcade/,
+  coffee: /cafe|coffee/,
+  nightlife: /pub|bar|brew|taproom|nightclub/,
+};
+
 function matchesInterest(p: Place, interest: string): boolean {
   const key = canonicalInterest(interest);
-  const words: Record<string, RegExp> = {
-    walk: /walk|park|garden|lake|street|promenade/,
-    nature: /park|garden|lake|nature/,
-    music: /music|concert|jazz|rock|live|arts_centre|bar|pub/,
-    art: /art|gallery|museum/,
-    museum: /museum/,
-    history: /history|palace|fort|monument/,
-    books: /book/,
-    shopping: /mall|market|shop|street/,
-    movies: /cinema|movie/,
-    theatre: /theatre/,
-    games: /game|bowling|arcade/,
-    coffee: /cafe|coffee/,
-  };
-  const re = words[key] ?? new RegExp(key.replace(/[^a-z]/g, ""), "i");
+  const re = INTEREST_WORDS[key] ?? new RegExp(key.replace(/[^a-z]/g, ""), "i");
   return re.test(`${p.category} ${p.name}`.toLowerCase());
+}
+
+/** Does this stop genuinely serve the interest? Known interests are judged by
+ * the place's category (not by which search found it); unknown ones fall back
+ * to search provenance. */
+function servesInterest(p: Place, interest: string): boolean {
+  const key = canonicalInterest(interest);
+  if (INTEREST_WORDS[key]) return matchesInterest(p, interest);
+  return p.interest?.toLowerCase() === interest.toLowerCase() || matchesInterest(p, interest);
 }
 
 const ENERGY_RANK: Record<Energy, number> = { low: 0, medium: 1, high: 2 };
@@ -214,6 +225,7 @@ const ENERGY_RANK: Record<Energy, number> = { low: 0, medium: 1, high: 2 };
 function scorePlace(p: Place, prefs: Preferences, weather: WeatherSummary | null): number {
   let s = 0;
   if (p.source === "curated") s += 1.5;
+  if (p.notable) s += 1.2; // has a Wikipedia article
   if (p.source === "generic") s -= 4;
   s -= Math.min(p.distance_km ?? 0, 30) * 0.15;
   if (prefs.avoid_crowds) s -= p.crowd_base === "high" ? 2 : p.crowd_base === "medium" ? 0.4 : -0.4;
@@ -222,6 +234,10 @@ function scorePlace(p: Place, prefs: Preferences, weather: WeatherSummary | null
   if (!p.indoor && (weather?.max_rain_prob ?? 0) >= 60) s -= 1.5;
   const share = (p.est_cost_per_person * prefs.party_size) / Math.max(prefs.budget, 1);
   if (share > 0.6) s -= 2;
+  // A generous budget signals the experience level the user is happy to pay
+  // for: nudge substantive paid options up instead of always the cheapest.
+  const generous = prefs.budget / prefs.party_size >= 2500 * currencyFor(prefs.country_code).factor;
+  if (generous && share >= 0.04 && share <= 0.5) s += 0.6;
   if (p.kind === "food" && prefs.dietary !== "none") {
     s += p.veg === "pure_veg" ? 1.5 : p.veg === "veg_friendly" ? 0.5 : p.veg === "unknown" ? -1.5 : -10;
   }
@@ -397,6 +413,11 @@ export async function weatherFor(prefs: Preferences) {
 // estimate_cost + validate_plan. Deterministic and the single source of truth
 // for every number the user sees. The LLM's prose is never trusted for maths.
 // ---------------------------------------------------------------------------
+/** A generous budget left mostly unused (ceiling, not target, but worth explaining). */
+export function budgetUnderused(total: number, prefs: Preferences): boolean {
+  return total < prefs.budget * 0.3 && prefs.budget - total >= 1000 * currencyFor(prefs.country_code).factor;
+}
+
 export function validatePlan(
   stops: PlanStopInput[],
   prefs: Preferences,
@@ -463,6 +484,17 @@ export function validatePlan(
       const rain = rainAt(weather, start, start + dur);
       if (rain >= 80) violations.push(`${p.name} is outdoors and rain chance is ${rain}% at that time.`);
       else if (rain >= 50) warnings.push(`${p.name} is outdoors; ${rain}% chance of rain then.`);
+      const temps = (weather?.hours ?? [])
+        .filter((h) => {
+          const m = Number(h.hour.slice(0, 2)) * 60;
+          return m + 60 > start && m < start + dur;
+        })
+        .map((h) => h.temp_c);
+      if (temps.length) {
+        const lo = Math.min(...temps), hi = Math.max(...temps);
+        if (lo <= 5) warnings.push(`${p.name} is outdoors and it'll be around ${lo}°C then - dress warm or shorten it.`);
+        else if (hi >= 38) warnings.push(`${p.name} is outdoors and it'll be around ${hi}°C then - carry water or shorten it.`);
+      }
     }
     if (ENERGY_RANK[p.energy] - ENERGY_RANK[prefs.energy] >= 2) warnings.push(`${p.name} is physically demanding for a low-energy day.`);
 
@@ -502,12 +534,24 @@ export function validatePlan(
   if (travelMinutes > prefs.available_minutes * 0.35) warnings.push(`${travelMinutes} min of travel is over a third of your time.`);
   if (unverifiedHours) warnings.push(`${unverifiedHours} live OSM place(s) have no opening hours in the data - confirm before going.`);
   if (prefs.energy === "low" && stops.length > 4) warnings.push("More than 4 stops is a lot for a tired day.");
-  if (foodStops === 0 && prefs.interests.some((i) => /food|eat/i.test(i))) warnings.push("You listed food as an interest but the plan has no food stop.");
+  // Interest coverage: every stated interest should be served by some stop,
+  // or the model must explain why it was left out.
+  const planned = stops.map((st) => registry.get(st.place_id)).filter((x): x is Place => Boolean(x));
+  const uncovered = prefs.interests.filter((i) =>
+    /^(food|eat|eating|dining|restaurants?)$/i.test(i.trim())
+      ? foodStops === 0
+      : !planned.some((p) => servesInterest(p, i)),
+  );
+  if (uncovered.length) warnings.push(`Not covered by any stop: ${uncovered.join(", ")}.`);
 
   const buffer = Math.round((stopsTotal + travelTotal) * 0.05);
   const total = stopsTotal + travelTotal + buffer;
   if (total > prefs.budget * 1.1) violations.push(`Estimated total ${prefs.currency}${total} exceeds budget ${prefs.currency}${prefs.budget} by more than 10%.`);
   else if (total > prefs.budget) warnings.push(`Estimated total ${prefs.currency}${total} is slightly over your ${prefs.currency}${prefs.budget} budget.`);
+  // Budget is a ceiling, not a target, but a big unused budget usually means
+  // the plan undersells what the user was happy to pay for.
+  else if (budgetUnderused(total, prefs))
+    warnings.push(`Uses only ${Math.round((total / Math.max(prefs.budget, 1)) * 100)}% of your ${prefs.currency}${prefs.budget} budget.`);
 
   return {
     ok: violations.length === 0,
@@ -524,6 +568,8 @@ export function validatePlan(
       currency: prefs.currency,
     },
     total_minutes: timeline.length ? prevLeave - (toMin(timeline[0].arrive) - timeline[0].travel_from_prev_min) : 0,
+    uncovered_interests: uncovered,
+    budget_share: prefs.budget > 0 ? total / prefs.budget : 1,
   };
 }
 
@@ -628,6 +674,7 @@ export function placeLine(p: Place, currency: string): string {
     `~${p.typical_minutes}min`,
     p.hours ? `hours:${p.hours}` : "hours:?",
   ];
+  if (p.notable) parts.push("notable");
   if (p.veg) parts.push(`veg:${p.veg}`);
   if (p.interest) parts.push(`for:${p.interest}`);
   if (p.notes) parts.push(p.notes.slice(0, 90));

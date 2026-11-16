@@ -22,7 +22,7 @@ export interface StreamState {
   clarify: { questions: ClarifyQuestion[]; reason: string } | null;
   plan: RenderedPlan | null;
   error: string | null;
-  usage: { input: number; output: number; turns: number } | null;
+  usage: { input: number; output: number; turns: number; cache_read?: number } | null;
   startedAt: number | null;
   finishedAt: number | null;
 }
