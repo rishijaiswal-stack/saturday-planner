@@ -70,6 +70,8 @@ async function runCase(c: Case): Promise<Row> {
     if (!v.ok) problems.push(`violations: ${v.violations.join(" | ")}`);
     if (v.cost.total > v.cost.budget * 1.1) problems.push("over budget");
     if (p.stops.length < 1) problems.push("no stops");
+    const unresolved = p.stops.filter((s) => !p.places[s.place_id]).map((s) => s.place_id);
+    if (unresolved.length) problems.push(`stop ids missing from places (UI would drop them): ${unresolved.join(", ")}`);
     const unexplained = v.uncovered_interests.filter((i) => !(p.left_out ?? []).some((x) => x.interest.toLowerCase().includes(i.toLowerCase()) || i.toLowerCase().includes(x.interest.toLowerCase())));
     if (unexplained.length) problems.push(`uncovered & unexplained: ${unexplained.join(", ")}`);
     if (v.budget_share < 0.3 && !p.budget_note && v.cost.budget - v.cost.total > 1000) problems.push("budget mostly unused, no note");

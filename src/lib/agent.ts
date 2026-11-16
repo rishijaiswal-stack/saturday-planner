@@ -575,7 +575,7 @@ export async function runAgent(req: PlanRequest, emit: Emit): Promise<void> {
           summary: a.data.summary,
           stops: stops.map((st) => {
             const prose = a.data.stops.find((x) => registry.resolve(x.place_id) === st.place_id) ?? a.data.stops[0];
-            return { ...prose, start_time: st.start_time, duration_min: st.duration_min, tradeoff: prose.tradeoff || undefined };
+            return { ...prose, place_id: st.place_id, start_time: st.start_time, duration_min: st.duration_min, tradeoff: prose.tradeoff || undefined };
           }),
           plan_b: a.data.plan_b,
           tips: a.data.tips.slice(0, 3),
