@@ -35,6 +35,35 @@ export function parseDuration(text: string | undefined): number | null {
   return n ? Math.round(Number(n[1]) * 60) : null;
 }
 
+/**
+ * Explicit clock times in free text ("from 4pm to 10pm", "after 6 pm",
+ * "9am", "16:00-20:00"). Clear user signals like these are enforced by code
+ * rather than trusted to the model's extraction.
+ */
+export function parseTimeWindow(text: string): { start?: string; minutes?: number } {
+  const t = text.toLowerCase();
+  const toMins = (h: string, m: string | undefined, ap: string | undefined) => {
+    let hh = Number(h) % 24;
+    if (ap === "pm" && hh < 12) hh += 12;
+    if (ap === "am" && hh === 12) hh = 0;
+    return hh * 60 + Number(m ?? 0);
+  };
+  const fmt = (mins: number) => `${String(Math.floor(mins / 60)).padStart(2, "0")}:${String(mins % 60).padStart(2, "0")}`;
+  const T = String.raw`(\d{1,2})(?:[:.](\d{2}))?\s*(am|pm)?`;
+  const range = new RegExp(`${T}\\s*(?:to|till|until|and|-|–)\\s*${T}`).exec(t);
+  if (range && (range[3] || range[6] || range[2] || range[5])) {
+    const endAp = range[6];
+    const startAp = range[3] ?? (endAp && Number(range[1]) <= Number(range[4]) ? endAp : undefined);
+    const a = toMins(range[1], range[2], startAp);
+    let b = toMins(range[4], range[5], endAp);
+    if (b <= a) b += 12 * 60; // "4 to 10pm" style
+    if (b - a >= 30 && b - a <= 16 * 60) return { start: fmt(a), minutes: b - a };
+  }
+  const single = new RegExp(`(?:from|after|at|starting(?: at)?|start(?:ing)? at)\\s+${T}`).exec(t);
+  if (single && (single[3] || single[2])) return { start: fmt(toMins(single[1], single[2], single[3])) };
+  return {};
+}
+
 export function energyFromMood(mood: string): Energy {
   const m = mood.toLowerCase();
   if (/tired|lazy|exhaust|sleepy|low|hungover|drained|chill|relax/.test(m)) return "low";
@@ -61,6 +90,7 @@ export function rulesUnderstand(form: FormInput | undefined, text: string | unde
     };
   }
   const t = (text ?? "").toLowerCase();
+  const tw = parseTimeWindow(t);
   const cities = ["bangalore", "bengaluru", "mumbai", "delhi", "new delhi", "pune", "hyderabad", "chennai", "kolkata", "london", "new york", "singapore", "dubai"];
   const city = cities.find((c) => t.includes(c));
   const budget = /(?:₹|rs\.?|inr|budget(?: of| is)?)\s*(\d[\d,]*)/.exec(t)?.[1]?.replace(/,/g, "");
@@ -71,7 +101,8 @@ export function rulesUnderstand(form: FormInput | undefined, text: string | unde
   return {
     city,
     budget: budget ? Number(budget) : null,
-    available_minutes: parseDuration(t),
+    available_minutes: tw.minutes ?? parseDuration(t),
+    start_time: tw.start ?? null,
     mood: text ?? "",
     energy: energyFromMood(t),
     interests,

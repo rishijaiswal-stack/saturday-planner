@@ -10,7 +10,7 @@
 // Any LLM failure degrades to the rule-based planner instead of erroring.
 
 import { z } from "zod";
-import { describePlan, energyFromMood, rulesPlan, rulesUnderstand, type FormInput } from "./fallback";
+import { describePlan, energyFromMood, parseTimeWindow, rulesPlan, rulesUnderstand, type FormInput } from "./fallback";
 import { routeUrl, toMin } from "./geo";
 import { AllModelsFailedError, chat, MODELS, NoKeyError, type ChatCompletionMessageParam, type ChatCompletionTool } from "./llm";
 import { PLAN_SYSTEM, UNDERSTAND_SYSTEM } from "./prompts";
@@ -354,6 +354,10 @@ export async function runAgent(req: PlanRequest, emit: Emit): Promise<void> {
     llmDown(e);
   }
   raw ??= rulesUnderstand(req.form, [req.text, ...(req.answers ?? []).map((a) => a.answer)].filter(Boolean).join(". "));
+  // Explicit clock times in the user's own words win over model extraction.
+  const tw = parseTimeWindow([req.text, req.form?.available_time, req.form?.start_time, ...(req.answers ?? []).map((a) => a.answer)].filter(Boolean).join(". "));
+  if (tw.start && raw.start_time !== tw.start) raw.start_time = tw.start;
+  if (tw.minutes && raw.available_minutes !== tw.minutes) raw.available_minutes = tw.minutes;
   if (!raw.city && req.answers?.length) {
     const cityAnswer = req.answers.find((a) => /city/i.test(a.question))?.answer;
     if (cityAnswer) raw.city = cityAnswer;

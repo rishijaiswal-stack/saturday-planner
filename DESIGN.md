@@ -146,6 +146,8 @@ The server pushes typed events: `tool_call`, `tool_result`, `thinking`, `status`
   - filters food by diet (`conditions=vegetarian` on Geoapify, plus name heuristics)
   - makes a non-veg stop a hard violation and an unverified one a warning
 
+- **Explicit clock times** ("from 4pm to 10pm", "after 6pm", "between 11am and 3pm") are parsed deterministically and override the model's extraction. In testing, a smaller fallback model missed "from 4pm" and planned a morning, so clear user signals are now enforced by code, like the "tired" → low-energy rule.
+
 ## 10. Abuse and safety
 
 - API keys are server-side only.
