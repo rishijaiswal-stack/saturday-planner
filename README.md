@@ -2,7 +2,7 @@
 
 An AI agent that plans a realistic, personalised Saturday. Tell it your city, budget, time, mood, interests and constraints, by form or in your own words. It checks **real places** (OpenStreetMap), the **real weather forecast**, **travel times** and your **budget**, then explains why each stop fits you. You can watch it work as it goes.
 
-**Live demo:** _<add Vercel URL here>_
+**Live demo:** https://saturday-planner-eight.vercel.app
 
 ---
 
