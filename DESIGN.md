@@ -76,6 +76,10 @@ The budget is treated as a **ceiling, not a target**. With a generous budget, ra
 
 The real fix for capacity is Groq's paid tier (fractions of a cent per plan); the architecture doesn't change, only the limits.
 
+**Live AI status on the page.** A pill in the header shows whether the AI planner is ready, busy (with a countdown) or out of its daily free allowance (with the reset time in the viewer's local clock). Groq returns per-minute token and per-day request counters in response headers. The daily token allowance only appears in the 429 error ("Used X of Y, try again in Z"), so that is parsed too. Two sources keep it cheap:
+- every plan request pushes the headers it already received at the end of its stream, at no cost;
+- `GET /api/ai-status` makes one ~15-token probe at most every 5 minutes per server instance, so status checks can't eat the 1,000-requests/day allowance.
+
 ## 4. Real data: provider chain + curated layer
 
 | Source | Role | Why |

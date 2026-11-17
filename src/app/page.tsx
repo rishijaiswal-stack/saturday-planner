@@ -2,6 +2,7 @@
 
 import { CloudSun, Compass, MapPin, RotateCcw, Route, ShieldCheck, TriangleAlert, type LucideIcon } from "lucide-react";
 import { useState } from "react";
+import { AiStatusPill } from "@/components/AiStatusPill";
 import { ClarifyCard } from "@/components/ClarifyCard";
 import { InputPanel } from "@/components/InputPanel";
 import { PlanView } from "@/components/PlanView";
@@ -27,12 +28,14 @@ export default function Home() {
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:py-12">
       <header className="mb-10">
-        <div className="flex items-center gap-2.5">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-neutral-950 text-white shadow-sm">
-            <Compass className="h-5 w-5" aria-hidden />
-          </span>
-          <span className="text-sm font-semibold tracking-tight text-neutral-900">Saturday Planner</span>
-
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-neutral-950 text-white shadow-sm">
+              <Compass className="h-5 w-5" aria-hidden />
+            </span>
+            <span className="text-sm font-semibold tracking-tight text-neutral-900">Saturday Planner</span>
+          </div>
+          <AiStatusPill pushed={state.aiStatus} />
         </div>
         <p className="mt-10 text-xs font-semibold uppercase tracking-[0.18em] text-neutral-700">AI agent · Real places · Live weather</p>
         <h1 className="mt-4 max-w-3xl text-4xl font-semibold tracking-tight text-neutral-950 sm:text-[3.4rem] sm:leading-[1.08]">

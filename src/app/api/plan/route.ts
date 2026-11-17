@@ -4,6 +4,8 @@
 
 import { z } from "zod";
 import { runAgent } from "@/lib/agent";
+import { latestStatus } from "@/lib/aiStatus";
+import { MODELS } from "@/lib/llm";
 import type { AgentEvent } from "@/lib/types";
 
 export const maxDuration = 120;
@@ -70,6 +72,9 @@ export async function POST(req: Request) {
         console.error("agent crashed", err);
         emit({ type: "error", message: "Something went wrong while planning. Please try again.", recoverable: true });
       } finally {
+        // Capacity snapshot from this request's own Groq calls: free to report.
+        const status = latestStatus(MODELS.plan[0]);
+        if (status) emit({ type: "ai_status", status });
         closed = true;
         controller.close();
       }

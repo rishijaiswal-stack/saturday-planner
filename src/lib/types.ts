@@ -143,6 +143,21 @@ export interface ClarifyQuestion {
   options?: string[];
 }
 
+// Live capacity of the free AI tier, shown as a status pill in the UI.
+export interface AiStatus {
+  state: "ready" | "busy" | "daily_limit" | "unavailable" | "not_configured";
+  model: string;
+  tokens_left_minute?: number;
+  tokens_limit_minute?: number;
+  requests_left_today?: number;
+  requests_limit_today?: number;
+  daily_used?: number;
+  daily_limit?: number;
+  retry_at?: number; // epoch ms when it should be usable again
+  checked_at: number;
+  source: "probe" | "plan";
+}
+
 // Server -> client stream events (one JSON object per SSE "data:" line).
 export type AgentEvent =
   | { type: "status"; message: string }
@@ -160,4 +175,5 @@ export type AgentEvent =
   | { type: "clarify"; questions: ClarifyQuestion[]; reason: string; resume: string }
   | { type: "plan"; plan: RenderedPlan }
   | { type: "error"; message: string; recoverable: boolean }
+  | { type: "ai_status"; status: AiStatus }
   | { type: "done"; usage?: { input: number; output: number; cache_read: number; turns: number } };

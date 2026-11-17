@@ -8,6 +8,7 @@
 
 import Groq, { APIConnectionError, APIError, AuthenticationError, RateLimitError } from "groq-sdk";
 import type { ChatCompletionMessageParam, ChatCompletionTool } from "groq-sdk/resources/chat/completions";
+import { recordHeaders, recordLimitError } from "./aiStatus";
 
 let client: Groq | null = null;
 function groq(): Groq {
@@ -94,6 +95,7 @@ export async function chat(opts: ChatOptions): Promise<ChatResult & { modelIndex
         const msg = describe(e);
         errors.push(`${model}: ${msg}`);
         console.warn(`[groq] ${model} attempt ${attempt + 1}: ${msg}`); // visible in Vercel runtime logs
+        if (e instanceof RateLimitError) recordLimitError(model, msg, e.headers);
         if (e instanceof RateLimitError && isDaily(msg)) {
           kinds.push("daily");
           dailyBlockedUntil[model] = Date.now() + 10 * 60_000;
@@ -143,7 +145,7 @@ function describe(e: unknown): string {
 }
 
 async function chatOnce(model: string, opts: ChatOptions): Promise<ChatResult> {
-  const stream = await groq().chat.completions.create({
+  const { data: stream, response } = await groq().chat.completions.create({
     model,
     messages: opts.messages,
     tools: opts.tools,
@@ -152,7 +154,8 @@ async function chatOnce(model: string, opts: ChatOptions): Promise<ChatResult> {
     temperature: 0.4,
     stream: true,
     ...modelParams(model),
-  });
+  }).withResponse();
+  recordHeaders(model, response.headers); // free capacity snapshot for the UI status pill
 
   let content = "";
   let reasoning = "";

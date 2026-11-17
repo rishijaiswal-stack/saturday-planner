@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import type { AgentEvent, ClarifyQuestion, RenderedPlan } from "@/lib/types";
+import type { AgentEvent, AiStatus, ClarifyQuestion, RenderedPlan } from "@/lib/types";
 
 export interface TraceStep {
   id: string;
@@ -25,6 +25,7 @@ export interface StreamState {
   usage: { input: number; output: number; turns: number; cache_read?: number } | null;
   startedAt: number | null;
   finishedAt: number | null;
+  aiStatus: AiStatus | null; // pushed at the end of each plan stream
 }
 
 const EMPTY: StreamState = {
@@ -38,6 +39,7 @@ const EMPTY: StreamState = {
   usage: null,
   startedAt: null,
   finishedAt: null,
+  aiStatus: null,
 };
 
 export interface PlanBody {
@@ -78,6 +80,8 @@ export function useAgentStream() {
           return { ...s, plan: e.plan };
         case "error":
           return { ...s, error: e.message };
+        case "ai_status":
+          return { ...s, aiStatus: e.status };
         case "done":
           return { ...s, usage: e.usage ?? null };
       }
@@ -89,6 +93,7 @@ export function useAgentStream() {
     abortRef.current = ac;
     setState((s) => ({
       ...EMPTY,
+      aiStatus: s.aiStatus,
       steps: keepTrace ? s.steps : [],
       statuses: keepTrace ? s.statuses : [],
       running: true,
@@ -135,7 +140,7 @@ export function useAgentStream() {
 
   const reset = useCallback(() => {
     abortRef.current?.abort();
-    setState(EMPTY);
+    setState((s) => ({ ...EMPTY, aiStatus: s.aiStatus }));
   }, []);
 
   return { state, run, reset };
