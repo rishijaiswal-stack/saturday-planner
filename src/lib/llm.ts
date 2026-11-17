@@ -21,7 +21,17 @@ export class NoKeyError extends Error {
     super("GROQ_API_KEY is not set");
   }
 }
-export class AllModelsFailedError extends Error {}
+export type LimitKind = "daily" | "minute" | "other";
+export class AllModelsFailedError extends Error {
+  constructor(message: string, public kind: LimitKind) {
+    super(message);
+  }
+}
+
+// A model that hit its daily free-tier cap is skipped for a while instead of
+// being retried on every request (each retry adds latency and fails anyway).
+const dailyBlockedUntil: Record<string, number> = {};
+const isDaily = (msg: string) => /per day|\bTPD\b|\bRPD\b/i.test(msg);
 
 const list = (env: string | undefined, dflt: string[]) => (env ? env.split(",").map((s) => s.trim()).filter(Boolean) : dflt);
 
@@ -66,8 +76,14 @@ export interface ChatOptions {
 
 export async function chat(opts: ChatOptions): Promise<ChatResult & { modelIndex: number }> {
   const errors: string[] = [];
+  const kinds: LimitKind[] = [];
   for (let i = opts.startModelIndex ?? 0; i < opts.models.length; i++) {
     const model = opts.models[i];
+    if ((dailyBlockedUntil[model] ?? 0) > Date.now()) {
+      kinds.push("daily");
+      errors.push(`${model}: daily limit (cached)`);
+      continue;
+    }
     let waited = 0;
     for (let attempt = 0; attempt < 3; attempt++) {
       try {
@@ -77,6 +93,13 @@ export async function chat(opts: ChatOptions): Promise<ChatResult & { modelIndex
         if (e instanceof NoKeyError || e instanceof AuthenticationError) throw e;
         const msg = describe(e);
         errors.push(`${model}: ${msg}`);
+        console.warn(`[groq] ${model} attempt ${attempt + 1}: ${msg}`); // visible in Vercel runtime logs
+        if (e instanceof RateLimitError && isDaily(msg)) {
+          kinds.push("daily");
+          dailyBlockedUntil[model] = Date.now() + 10 * 60_000;
+          opts.onStatus?.(`${model} has used its free daily allowance; switching model`);
+          break;
+        }
         if (e instanceof RateLimitError) {
           const wait = Number(e.headers?.get("retry-after") ?? "NaN");
           // TPM limits reset within seconds; a short visible wait on the best
@@ -87,6 +110,7 @@ export async function chat(opts: ChatOptions): Promise<ChatResult & { modelIndex
             await new Promise((r) => setTimeout(r, wait * 1000));
             continue;
           }
+          kinds.push("minute");
           opts.onStatus?.(`${model} rate-limited; switching model`);
           break;
         }
@@ -96,12 +120,14 @@ export async function chat(opts: ChatOptions): Promise<ChatResult & { modelIndex
           opts.onStatus?.(`${model} produced a malformed tool call; retrying`);
           continue;
         }
+        kinds.push("other");
         opts.onStatus?.(`${model} failed (${msg.slice(0, 80)}); trying next model`);
         break;
       }
     }
   }
-  throw new AllModelsFailedError(errors.join(" | "));
+  const kind: LimitKind = kinds.length && kinds.every((k) => k === "daily") ? "daily" : kinds.includes("minute") ? "minute" : kinds.includes("daily") ? "daily" : "other";
+  throw new AllModelsFailedError(errors.join(" | "), kind);
 }
 
 function describe(e: unknown): string {

@@ -677,6 +677,6 @@ export function placeLine(p: Place, currency: string): string {
   if (p.notable) parts.push("notable");
   if (p.veg) parts.push(`veg:${p.veg}`);
   if (p.interest) parts.push(`for:${p.interest}`);
-  if (p.notes) parts.push(p.notes.slice(0, 90));
+  if (p.notes) parts.push(p.notes.slice(0, 70));
   return parts.join(" | ");
 }

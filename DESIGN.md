@@ -68,6 +68,14 @@ The budget is treated as a **ceiling, not a target**. With a generous budget, ra
 - **Fallback chain:** rate limits are per model, so on a 429 we move to the next model, which has its own bucket. That multiplies effective capacity. If Groq says "retry in ≤6s", we wait once first. When every model fails, the rule-based planner runs.
 - **Swappable:** all provider code lives in `src/lib/llm.ts` (~150 lines). Moving to Claude, GPT or Gemini means re-implementing `chat()` only.
 
+**Free-tier capacity, measured in production.** One plan used about 7,800 tokens against a limit of 8,000 tokens per minute per model, plus a daily token cap per model. Heavy testing on one day exhausted the daily allowance and the live app fell back to the rule-based planner for much of the next day. Changes made:
+- **Fewer tokens per plan:** `validate_plan` is no longer offered to the model (finalize validates anyway, so it was an extra round trip), and candidate lists are shorter (7 activities, 5 food, shorter notes).
+- **Honest fallback messages:** rate-limit errors are classified as per-minute or daily; the UI says "busy, try again in a minute" or "today's free AI allowance is used up" instead of "limit or outage".
+- **Smarter retries and logging:** a model that hit its daily cap is skipped for 10 minutes instead of being retried on every request, and every Groq failure is logged for Vercel's runtime logs.
+- **Requested max output length doesn't count against the limit;** we measured this, so only real usage matters.
+
+The real fix for capacity is Groq's paid tier (fractions of a cent per plan); the architecture doesn't change, only the limits.
+
 ## 4. Real data: provider chain + curated layer
 
 | Source | Role | Why |

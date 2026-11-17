@@ -87,7 +87,7 @@ export function PlanView({ plan, onRestart }: { plan: RenderedPlan; onRestart: (
       {plan.generated_by === "rules_fallback" && (
         <div className="flex items-start gap-2 border-b border-amber-200 bg-amber-50 px-5 py-2.5 text-xs text-amber-900">
           <LifeBuoy className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
-          The AI model was unavailable (free-tier limit or outage), so the rule-based planner built this from the same real data and checks.
+          {plan.fallback_reason ?? "The AI model was unavailable, so the rule-based planner built this from the same real data and checks."}
         </div>
       )}
 

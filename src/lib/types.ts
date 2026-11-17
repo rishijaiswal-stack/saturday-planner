@@ -129,6 +129,7 @@ export interface FinalPlan {
 // What the UI renders: LLM prose merged with code-computed facts.
 export interface RenderedPlan extends FinalPlan {
   generated_by: "agent" | "rules_fallback";
+  fallback_reason?: string; // shown in the UI when the rule-based planner was used
   model?: string;
   preferences: Preferences;
   weather: WeatherSummary | null;

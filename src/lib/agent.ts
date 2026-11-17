@@ -143,11 +143,6 @@ const PLAN_TOOLS: ChatCompletionTool[] = [
     properties: { kind: { type: "string", enum: ["activity", "food"] }, query: { type: "string" } },
     required: ["kind", "query"],
   }),
-  fn("validate_plan", "Check a draft: travel times, opening hours, budget, diet, crowds, weather. Returns violations, warnings, timeline, cost.", {
-    type: "object",
-    properties: { stops: { type: "array", items: STOP_SCHEMA } },
-    required: ["stops"],
-  }),
   fn("finalize_plan", "Submit the final plan. It is validated server-side; plans with violations are rejected.", {
     type: "object",
     properties: {
@@ -295,9 +290,22 @@ export async function runAgent(req: PlanRequest, emit: Emit): Promise<void> {
     return r;
   };
   let llmUp = true;
+  let fallbackReason = "The AI model was unavailable, so the rule-based planner built this from the same real data and checks.";
   const llmDown = (e: unknown) => {
     llmUp = false;
-    const why = e instanceof NoKeyError ? "no GROQ_API_KEY configured" : e instanceof AllModelsFailedError ? "all models rate-limited/unavailable" : (e as Error).message;
+    let why: string;
+    if (e instanceof NoKeyError) {
+      why = "no GROQ_API_KEY configured";
+      fallbackReason = "AI planning isn't configured on this deployment, so the rule-based planner built this from the same real data and checks.";
+    } else if (e instanceof AllModelsFailedError && e.kind === "daily") {
+      why = "free daily AI allowance used up";
+      fallbackReason = "Today's free AI allowance is used up, so the rule-based planner built this from the same real data and checks. AI planning resumes as the allowance refills.";
+    } else if (e instanceof AllModelsFailedError && e.kind === "minute") {
+      why = "free per-minute AI limit reached";
+      fallbackReason = "The free AI tier is busy right now, so the rule-based planner built this from the same real data and checks. Try again in about a minute for an AI-written plan.";
+    } else {
+      why = e instanceof AllModelsFailedError ? "all models unavailable" : (e as Error).message;
+    }
     emit({ type: "status", message: `The AI model is unavailable (${why}); switching to the rule-based planner.` });
   };
 
@@ -391,14 +399,14 @@ export async function runAgent(req: PlanRequest, emit: Emit): Promise<void> {
     step(
       "get_activity_options",
       { city: prefs.city, interests: prefs.interests },
-      () => getActivityOptions(prefs, weather, registry, 9),
+      () => getActivityOptions(prefs, weather, registry, 7),
       (r) => summarize(r, "activities"),
       (r) => r.places.map((p) => ({ id: p.id, name: p.name, source: p.source, km: p.distance_km })),
     ),
     step(
       "get_food_options",
       { city: prefs.city, budget: prefs.budget, dietary: prefs.dietary },
-      () => getFoodOptions(prefs, weather, registry, 7),
+      () => getFoodOptions(prefs, weather, registry, 5),
       (r) => summarize(r, "food places"),
       (r) => r.places.map((p) => ({ id: p.id, name: p.name, veg: p.veg, source: p.source, km: p.distance_km })),
     ),
@@ -432,7 +440,7 @@ export async function runAgent(req: PlanRequest, emit: Emit): Promise<void> {
       ms: 0,
       summary: `${plan.stops.length} stops, ${prefs.currency}${validation.cost.total}, ${validation.violations.length} violations`,
     });
-    emit({ type: "plan", plan: render(plan, validation, prefs, weather, registry, "rules_fallback") });
+    emit({ type: "plan", plan: { ...render(plan, validation, prefs, weather, registry, "rules_fallback"), fallback_reason: fallbackReason } });
     emit({ type: "done", usage });
   };
   if (!llmUp) return fallback("Building a plan with the rule-based planner.");
